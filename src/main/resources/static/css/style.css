@@ -1,0 +1,5 @@
+body{font-family:Poppins,sans-serif;background:#e8f5e9;padding:30px;color:#1b5e20}
+h1{color:#2e7d32}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+input,button{padding:10px;margin:6px 0;width:100%;border-radius:10px;border:1px solid #ccc}
+button{background:#4caf50;color:#fff;border:none;cursor:pointer}

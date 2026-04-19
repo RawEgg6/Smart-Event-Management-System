@@ -1,0 +1,7 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head>
+<link rel="stylesheet" href="/css/style.css"></head><body>
+<h1>Your Ticket</h1>
+<p th:text="${ticket.studentName}"></p>
+<p th:text="${ticket.event.title}"></p>
+<img th:src="${ticket.qrPath}" alt="QR Code">
+</body></html>

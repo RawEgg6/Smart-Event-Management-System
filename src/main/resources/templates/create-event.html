@@ -1,0 +1,10 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head>
+<link rel="stylesheet" href="/css/style.css"></head><body>
+<h1>Create Event</h1>
+<form action="/events/create" method="post">
+<input name="title" placeholder="Title" required>
+<input name="venue" placeholder="Venue" required>
+<input name="capacity" type="number" placeholder="Capacity" required>
+<input name="dateTime" type="datetime-local" required>
+<button type="submit">Save</button>
+</form></body></html>
