@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner | Smart Event</title>
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
+</head>
+<body>
+<h2>Camera QR Scanner</h2>
+<div id="reader" style="width: 320px;"></div>
+<div id="scanResult" style="margin-top: 12px;"></div>
+
+<script>
+function onScanSuccess(decodedText) {
+    fetch('/checkin/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrData: decodedText })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const result = document.getElementById('scanResult');
+        result.textContent = data.message + (data.eventId ? ' | Event ID: ' + data.eventId : '');
+        result.style.color = data.success ? 'green' : 'red';
+    })
+    .catch(() => {
+        const result = document.getElementById('scanResult');
+        result.textContent = 'Failed to call check-in endpoint';
+        result.style.color = 'red';
+    });
+}
+
+window.addEventListener('load', () => {
+    const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 }, false);
+    scanner.render(onScanSuccess);
+});
+</script>
+</body>
+</html>
