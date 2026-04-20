@@ -1,336 +1,183 @@
-# Smart Event & Crowd Management System — OOAD Design Brief
+# Smart Event & Crowd Management System
 
-> Read this entire document before starting any diagram. All diagrams must be consistent with the entity definitions and relationships defined here.
-
----
-
-## Table of Contents
-
-- [System Overview](#system-overview)
-- [Entities & Attributes](#entities--attributes)
-- [Class Diagram](#class-diagram)
-- [Use Case Diagram](#use-case-diagram)
-- [Activity Diagram](#activity-diagram)
-- [Sequence Diagram](#sequence-diagram)
-- [State Diagram](#state-diagram)
-- [Deployment Diagram](#deployment-diagram)
-- [Consistency Checklist](#consistency-checklist)
+A web-based college event management platform built with **Spring MVC**. Handles event creation, student registrations, QR-based ticketing, live crowd monitoring, and admin reporting.
 
 ---
 
-## System Overview
+## Overview
 
-The system has three actors: **Student**, **Organizer**, and **Admin**.
-
-Core entities are `User`, `Event`, `Registration`, `Ticket`, and `CheckIn`. Events follow a strict lifecycle. Tickets are QR-code-based and tied 1:1 to registrations.
-
----
-
-## Entities & Attributes
-
-> These are the source of truth. Every diagram must use these exact field names and types.
-
-### `User`
-| Field | Type |
+| Role | Capabilities |
 |---|---|
-| userId | Long (PK) |
-| name | String |
-| email | String |
-| passwordHash | String |
-| role | Enum: `STUDENT` / `ORGANIZER` / `ADMIN` |
-| createdAt | DateTime |
+| **Student / User** | Browse events, register, receive QR ticket, attend |
+| **Organizer** | Create and manage events, view attendees, track check-ins |
+| **Admin** | Monitor all events system-wide, generate reports |
 
-### `Event`
-| Field | Type |
-|---|---|
-| eventId | Long (PK) |
-| title | String |
-| description | String |
-| venue | String |
-| startTime | DateTime |
-| endTime | DateTime |
-| maxCapacity | Integer |
-| currentCount | Integer |
-| status | Enum: `DRAFT` / `PUBLISHED` / `ONGOING` / `COMPLETED` / `CANCELLED` |
-| createdBy | FK → User |
-
-### `Registration`
-| Field | Type |
-|---|---|
-| registrationId | Long (PK) |
-| eventId | FK → Event |
-| userId | FK → User |
-| registeredAt | DateTime |
-| status | Enum: `CONFIRMED` / `CANCELLED` |
-
-### `Ticket`
-| Field | Type |
-|---|---|
-| ticketId | Long (PK) |
-| registrationId | FK → Registration |
-| qrCodeData | String (UUID) |
-| issuedAt | DateTime |
-| isUsed | Boolean |
-
-### `CheckIn`
-| Field | Type |
-|---|---|
-| checkInId | Long (PK) |
-| ticketId | FK → Ticket |
-| scannedAt | DateTime |
-| scannedBy | FK → User (Organizer) |
-
-### `Alert`
-| Field | Type |
-|---|---|
-| alertId | Long (PK) |
-| eventId | FK → Event |
-| message | String |
-| sentAt | DateTime |
-| threshold | Integer (e.g. 90 for 90%) |
-
----
-
-## Class Diagram
-
-### Relationships
-
-| Relationship | Multiplicity | Description |
-|---|---|---|
-| `User` → `Event` | 1 to many | One organizer creates many events |
-| `User` → `Registration` | 1 to many | One student has many registrations |
-| `Event` → `Registration` | 1 to many | One event has many registrations |
-| `Registration` → `Ticket` | 1 to 1 | One registration generates one ticket |
-| `Ticket` → `CheckIn` | 1 to 0..1 | Check-in only exists after QR scan |
-| `Event` → `Alert` | 1 to many | One event can trigger multiple alerts |
-
-### Key Methods
-
-**`Event`**
+### Event Lifecycle (State Machine)
 ```
-+ publish()
-+ start()
-+ complete()
-+ cancel()
-+ isFull(): boolean
-```
-
-**`Registration`**
-```
-+ cancel()
-```
-
-**`Ticket`**
-```
-+ generateQR()
-+ markUsed()
-```
-
-**`CheckIn`**
-```
-+ validate()
-```
-
-**`AlertService`** *(service class, not an entity)*
-```
-+ checkCapacity(event: Event)
-+ sendAlert(event: Event)
-```
-
-### Additional Notes
-- Add a `<<enumeration>>` block for `EventStatus` (DRAFT, PUBLISHED, ONGOING, COMPLETED, CANCELLED)
-- Add a `<<enumeration>>` block for `UserRole` (STUDENT, ORGANIZER, ADMIN)
-- Mark `AlertService` with a `<<service>>` stereotype — it is not a data entity
-
----
-
-## Use Case Diagram
-
-### Actor: Student
-- Register for Event
-- View Registered Events
-- Cancel Registration
-- Download Ticket (QR)
-
-### Actor: Organizer
-- Create Event
-- Edit Event
-- Publish Event
-- Scan QR Code (Check-In)
-- View Attendance
-- Start Event
-- Complete Event
-
-### Actor: Admin
-- Monitor All Events (Live)
-- View Crowd Capacity
-- Generate Reports
-- Manage Users
-- Send / View Alerts
-
-### Relationships
-
-**`<<include>>`** (always happens as part of the base use case)
-- "Register for Event" includes → "Generate Ticket"
-- "Register for Event" includes → "Check Capacity"
-- "Scan QR Code" includes → "Validate Ticket"
-
-**`<<extend>>`** (happens only under a condition)
-- "Check Capacity" extends → "Send Alert" *(only when capacity ≥ 90%)*
-
----
-
-## Activity Diagram
-
-**Recommended flow:** Student Registration + Check-In
-
-**Swimlanes:** `Student` | `System` | `Organizer`
-
-```
-Student browses published events
-  → Student selects event
-    → [System] Check capacity
-      → [Full] Show "Event Full" → END
-      → [Available]
-          → Student submits registration
-          → [System] Create Registration record
-          → [System] Generate Ticket with QR code
-          → [System] Email ticket to student
-
-On event day:
-  → Student presents QR code
-  → Organizer scans it
-  → [System] Validate ticket
-    → [Invalid / Already Used] Show error → END
-    → [Valid]
-        → [System] Mark ticket as used
-        → [System] Increment currentCount
-        → [System] Check if currentCount / maxCapacity ≥ 0.9
-          → [Threshold hit] Send Alert to Admin
-        → Record CheckIn → END
+Draft → Published → Ongoing → Completed
 ```
 
 ---
 
-## Sequence Diagram
+## Project Structure by Phase
 
-**Recommended scenario:** QR Check-In Flow
+### ✅ Phase 0 — Foundation *(completed)*
 
-### Participants (left to right)
-1. `Organizer`
-2. `CheckInController`
-3. `TicketService`
-4. `TicketRepository`
-5. `EventService`
-6. `AlertService`
-7. `NotificationService`
+Core event and ticketing system already in place.
 
-### Message Flow
+**Files:**
+- `Event.java` — Event entity model
+- `Ticket.java` — Ticket entity with QR data
+- `EventController.java` — CRUD endpoints for events
+- `QRService.java` — QR code generation logic
+- `event.html` — Event UI pages
 
-```
-Organizer → CheckInController       : scanTicket(qrCode)
-CheckInController → TicketService   : validateTicket(qrCode)
-TicketService → TicketRepository    : findByQRCode(qrCode)
-TicketRepository → TicketService    : returns Ticket
-
-[TicketService checks ticket.isUsed]
-  → [true]  return error "Already Checked In"
-  → [false]
-      TicketService → TicketRepository   : markUsed(ticketId)
-      TicketService → EventService       : incrementCount(eventId)
-
-      [EventService checks currentCount / maxCapacity ≥ 0.9]
-        → alt [capacity ≥ 90%]
-            EventService → AlertService          : triggerAlert(eventId)
-            AlertService → NotificationService   : sendToAdmin(alert)
-        → else
-            (no alert)
-
-CheckInController → Organizer : return success response
-```
-
-> **Note:** Model the capacity check as a UML `alt` combined fragment with two branches: `[capacity ≥ 90%]` and `[else]`.
+**Features covered:**
+- Event creation, update, and delete
+- Student registration for events
+- QR code generation per registration
+- Ticket system
+- Event listing and detail UI
 
 ---
 
-## State Diagram
+### Phase 1 — User Authentication & Roles(✅comepleted)
 
-**Entity:** `Event`
+Adds Spring Security so the app knows who is a Student, Organizer, or Admin. All subsequent phases depend on authenticated users.
 
-### States & Transitions
+**New files:**
+- `User.java` — User entity with role field
+- `UserController.java` — Register/login endpoints
+- `SecurityConfig.java` — Spring Security configuration
+- `login.html` — Login page
+- `register.html` — Registration page
 
-```
-[Initial] ──► DRAFT ──[publish()]──► PUBLISHED ──[start()]──► ONGOING ──[complete()]──► COMPLETED
-                                         │                        │
-                                    [cancel()]              [cancel()]
-                                         │                        │
-                                         └──────────► CANCELLED ◄─┘
-```
+**Features to build:**
+- Spring Security login and registration flow
+- Role-based access control (Student, Organizer, Admin)
+- Session management and password hashing (BCrypt)
+- Role-based redirect after login
+- Auth guards on EventController endpoints
 
-### Guard Conditions
+**Builds on:** EventController (add `@PreAuthorize` guards)
 
-| Transition | Guard |
+---
+
+### Phase 2 — QR Check-in & Attendance Tracking(✅completed)
+
+Activates the QR codes generated in Phase 0. Organizers can scan tickets at the venue; the system validates and logs each check-in.
+
+**New files:**
+- `CheckInController.java` — Scan and validate QR endpoint
+- `AttendanceRecord.java` — Per-check-in log entity
+- `checkin.html` — Organizer check-in interface
+- `scanner.html` — Camera-based QR scanner (JavaScript)
+
+**Features to build:**
+- QR code scanning via browser camera (JS library e.g. `html5-qrcode`)
+- Server-side ticket validation (match QR data to ticket)
+- Duplicate scan prevention — reject already-used tickets
+- Mark ticket status as `USED` after successful check-in
+- Attendance log per event (who checked in, timestamp)
+- Live running count of checked-in attendees
+
+**Builds on:** `QRService.java`, `Ticket.java` (add `status` field)
+
+---
+
+### Phase 3 — Live Crowd Monitoring & Alerts
+
+The core "smart" feature. Uses attendance data from Phase 2 to track live capacity and trigger alerts when thresholds are crossed.
+
+**New files:**
+- `CrowdService.java` — Capacity tracking and threshold logic
+- `AlertService.java` — Notification trigger logic
+- `CrowdController.java` — REST endpoint for live count data
+- `crowd-dashboard.html` — Live capacity view for organizers
+
+**Features to build:**
+- Live attendee count vs. event capacity
+- Threshold alerts (configurable, e.g. 80% and 100%)
+- Real-time UI updates via WebSocket or polling
+- Event status badges: `Open` / `Nearly Full` / `Full`
+- Email or in-app notification when capacity is reached
+- Auto-close registration when event is full
+
+**Builds on:** `AttendanceRecord.java`, `Event.java` (add `capacity` field)
+
+---
+
+### Phase 4 — Organizer Dashboard & Event Lifecycle
+
+Gives organizers full visibility and control over their events, including the state machine transitions and attendee management.
+
+**New files:**
+- `OrganizerController.java` — Organizer-specific endpoints
+- `organizer-dashboard.html` — Dashboard: all events, live stats
+- `event-status.html` — State machine controls per event
+
+**Features to build:**
+- Event state transitions: `Draft → Published → Ongoing → Completed`
+- View full registration and attendance list per event
+- Download attendee list as CSV
+- Close or cancel an event early
+- Per-event stats: registered count, checked-in count, no-shows
+
+**Builds on:** Phase 1 role system, Phase 3 crowd data
+
+---
+
+### Phase 5 — Admin Monitoring & Reports
+
+System-wide visibility for the Admin role. Aggregates data across all events and produces downloadable reports.
+
+**New files:**
+- `AdminController.java` — Admin-only endpoints
+- `ReportService.java` — Aggregate stats and export logic
+- `admin-dashboard.html` — All events overview
+- `reports.html` — Filter and download reports
+
+**Features to build:**
+- System-wide event overview (all organizers, all events)
+- Crowd analytics across events (peak attendance, capacity trends)
+- Generate and download PDF or CSV reports
+- Filter reports by date range, department, or organizer
+- Event state diagram view per event
+- Audit log: who checked in, at what time, which scanner
+
+**Builds on:** All prior phases — full data is available by this stage
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
 |---|---|
-| `publish()` | `title`, `venue`, `startTime`, `maxCapacity` must all be set |
-| `start()` | `currentTime ≥ startTime` |
-| `complete()` | `currentTime ≥ endTime` |
-
-> Write guard conditions in square brackets on transition arrows: e.g. `[currentTime ≥ startTime]`
-
-### Entry Actions
-
-| State | Entry Action |
-|---|---|
-| `PUBLISHED` | Notify subscribed students |
-| `ONGOING` | Begin live capacity tracking |
-| `COMPLETED` | Generate attendance report |
+| Backend | Java, Spring MVC |
+| Security | Spring Security |
+| Frontend | Thymeleaf / HTML + JavaScript |
+| QR Scanning | `html5-qrcode` (JS library) |
+| Real-time | WebSocket or HTTP polling |
+| Database | JPA / Hibernate (MySQL or H2) |
+| Reports | CSV export / PDF generation |
 
 ---
 
-## Deployment Diagram
+## Getting Started
 
-### Nodes & Components
-
-**Client Tier** *(Browser / Mobile)*
-- React / HTML frontend
-- QR Scanner component
-
-**Web/App Server** *(Tomcat + Spring MVC)*
-- `EventController`
-- `RegistrationController`
-- `CheckInController`
-- `TicketService`
-- `AlertService`
-- Deployed as: `smart-event-system.war` `<<artifact>>`
-
-**Database Server** *(MySQL)*
-- Tables: `users`, `events`, `registrations`, `tickets`, `checkins`, `alerts`
-
-**Email Server** *(SMTP — Gmail API or SendGrid)*
-- Ticket delivery
-- Alert notifications
-
-**QR Code Service** *(ZXing library or external API)*
-- Called by `TicketService` to generate QR images
-
-### Connections
-
-| From | To | Protocol |
-|---|---|---|
-| Browser | Tomcat | HTTPS |
-| Tomcat | MySQL | JDBC |
-| Tomcat | Email Server | SMTP |
-| Tomcat | QR Code Service | HTTP / library call |
+1. Clone the repository
+2. Configure your database in `application.properties`
+3. Run the Spring Boot application
+4. Navigate to `/register` to create an account
+5. Log in and select your role to get started
 
 ---
 
-## Consistency Checklist
+## Development Order
 
-Before submitting any diagram, verify all of the following:
+Build and demo after each phase — each phase is independently functional:
 
-- [ ] Every class in the class diagram appears in at least one use case, sequence, or activity diagram
-- [ ] `EventStatus` enum values — `DRAFT`, `PUBLISHED`, `ONGOING`, `COMPLETED`, `CANCELLED` — are identical across the class diagram and state diagram
-- [ ] The alert threshold (≥ 90% capacity) appears consistently in the activity diagram, sequence diagram, and state diagram (as an ONGOING entry action)
-- [ ] `Ticket.isUsed` is set in the sequence diagram and declared as an attribute in the class diagram
-- [ ] `CheckIn.scannedBy` in the class diagram maps to the **Organizer** actor in the use case and sequence diagrams
-- [ ] No actor, class, or transition appears in one diagram but is absent from or contradicted by another
+```
+Phase 0 (done) → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
+   Foundation      Auth      Check-in   Crowd      Organizer   Admin
+```

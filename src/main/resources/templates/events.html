@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events | Smart Event</title>
+</head>
+<body>
+<h2>Events</h2>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
+
+<h3>Create Event (Organizer/Admin)</h3>
+<form th:action="@{/events}" method="post">
+    <label>Title:</label>
+    <input type="text" name="title" required>
+    <label>Description:</label>
+    <input type="text" name="description">
+    <label>Location:</label>
+    <input type="text" name="location">
+    <button type="submit">Create</button>
+</form>
+
+<h3>Available Events</h3>
+<div th:if="${#lists.isEmpty(events)}">No events yet.</div>
+<div th:each="event : ${events}" style="margin-bottom: 12px; border: 1px solid #ddd; padding: 10px;">
+    <strong th:text="${event.title}"></strong>
+    <p th:text="${event.description}"></p>
+    <p>Location: <span th:text="${event.location}"></span></p>
+    <form th:action="@{'/events/' + ${event.id} + '/register'}" method="post">
+        <button type="submit">Register (Student)</button>
+    </form>
+</div>
+
+<p><a th:href="@{/checkin}">Go to Organizer Check-in</a></p>
+</body>
+</html>

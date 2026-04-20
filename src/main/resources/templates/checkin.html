@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Check-in | Smart Event</title>
+</head>
+<body>
+<h2>Organizer Check-in</h2>
+
+<p><a th:href="@{/scanner}">Open Camera Scanner</a></p>
+
+<form id="manualCheckinForm">
+    <label>Paste QR Data:</label>
+    <input type="text" id="qrData" required>
+    <button type="submit">Validate & Check-in</button>
+</form>
+
+<div id="result" style="margin-top: 16px;"></div>
+
+<div style="margin-top: 20px;">
+    <label>Event ID for Live Count:</label>
+    <input type="number" id="eventId" min="1">
+    <button type="button" onclick="refreshCount()">Get Count</button>
+    <p>Checked-in count: <span id="count">-</span></p>
+</div>
+
+<script>
+const form = document.getElementById('manualCheckinForm');
+const resultDiv = document.getElementById('result');
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const qrData = document.getElementById('qrData').value;
+
+    const response = await fetch('/checkin/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrData })
+    });
+
+    const data = await response.json();
+    resultDiv.textContent = data.message;
+    resultDiv.style.color = data.success ? 'green' : 'red';
+
+    if (data.success) {
+        document.getElementById('eventId').value = data.eventId;
+        document.getElementById('count').textContent = data.checkedInCount;
+        form.reset();
+    }
+});
+
+async function refreshCount() {
+    const eventId = document.getElementById('eventId').value;
+    if (!eventId) {
+        return;
+    }
+
+    const response = await fetch('/checkin/event/' + eventId + '/count');
+    const data = await response.json();
+    document.getElementById('count').textContent = data.checkedInCount;
+}
+</script>
+</body>
+</html>
