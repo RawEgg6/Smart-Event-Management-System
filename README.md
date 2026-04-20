@@ -14,138 +14,272 @@ A web-based college event management platform built with **Spring MVC**. Handles
 
 ### Event Lifecycle (State Machine)
 ```
-Draft → Published → Ongoing → Completed
+Draft → Published → Ongoing → Completed → (or Cancelled)
 ```
 
 ---
 
-## Project Structure by Phase
+## Project Package Structure
 
-### ✅ Phase 0 — Foundation *(completed)*
+```
+com.smart.event
+├── controller/
+│   ├── EventController.java
+│   ├── UserController.java
+│   ├── CheckInController.java
+│   ├── CrowdController.java        ← Phase 3
+│   └── OrganizerController.java    ← Phase 4
+├── entity/
+│   ├── Event.java
+│   ├── User.java
+│   ├── Ticket.java
+│   └── AttendanceRecord.java
+├── repository/
+│   ├── EventRepository.java
+│   ├── UserRepository.java
+│   ├── TicketRepository.java
+│   └── AttendanceRecordRepository.java
+└── service/
+    ├── QRService.java
+    ├── CrowdService.java            ← Phase 3
+    └── AlertService.java            ← Phase 3
+```
 
-Core event and ticketing system already in place.
-
-**Files:**
-- `Event.java` — Event entity model
-- `Ticket.java` — Ticket entity with QR data
-- `EventController.java` — CRUD endpoints for events
-- `QRService.java` — QR code generation logic
-- `event.html` — Event UI pages
-
-**Features covered:**
-- Event creation, update, and delete
-- Student registration for events
-- QR code generation per registration
-- Ticket system
-- Event listing and detail UI
-
----
-
-### Phase 1 — User Authentication & Roles(✅comepleted)
-
-Adds Spring Security so the app knows who is a Student, Organizer, or Admin. All subsequent phases depend on authenticated users.
-
-**New files:**
-- `User.java` — User entity with role field
-- `UserController.java` — Register/login endpoints
-- `SecurityConfig.java` — Spring Security configuration
-- `login.html` — Login page
-- `register.html` — Registration page
-
-**Features to build:**
-- Spring Security login and registration flow
-- Role-based access control (Student, Organizer, Admin)
-- Session management and password hashing (BCrypt)
-- Role-based redirect after login
-- Auth guards on EventController endpoints
-
-**Builds on:** EventController (add `@PreAuthorize` guards)
+**Template location:** `src/main/resources/templates/`
 
 ---
 
-### Phase 2 — QR Check-in & Attendance Tracking(✅completed)
+## Entity Field Reference
 
-Activates the QR codes generated in Phase 0. Organizers can scan tickets at the venue; the system validates and logs each check-in.
+> ⚠️ Critical for LLM context — always use these exact field names in Java and Thymeleaf templates.
 
-**New files:**
-- `CheckInController.java` — Scan and validate QR endpoint
-- `AttendanceRecord.java` — Per-check-in log entity
-- `checkin.html` — Organizer check-in interface
-- `scanner.html` — Camera-based QR scanner (JavaScript)
+### `Event.java`
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `Long` | Primary key |
+| `title` | `String` | Use `getTitle()` — NOT `getName()` |
+| `description` | `String` | |
+| `location` | `String` | |
+| `startTime` | `LocalDateTime` | Use `getStartTime()` — NOT `getDate()` |
+| `endTime` | `LocalDateTime` | |
+| `capacity` | `int` | Added in Phase 3 |
+| `status` | `EventStatus` (enum) | Added in Phase 3/4 |
+| `organizer` | `User` | FK to users table as `organizer_id` |
 
-**Features to build:**
-- QR code scanning via browser camera (JS library e.g. `html5-qrcode`)
-- Server-side ticket validation (match QR data to ticket)
-- Duplicate scan prevention — reject already-used tickets
-- Mark ticket status as `USED` after successful check-in
-- Attendance log per event (who checked in, timestamp)
-- Live running count of checked-in attendees
+**EventStatus enum values:** `DRAFT`, `PUBLISHED`, `ONGOING`, `COMPLETED`, `CANCELLED`
 
-**Builds on:** `QRService.java`, `Ticket.java` (add `status` field)
+### `User.java`
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `Long` | Primary key |
+| `username` | `String` | Use `getUsername()` — NOT `getName()` |
+| `email` | `String` | |
+| `password` | `String` | BCrypt encoded |
+| `role` | `Role` (enum) | `STUDENT`, `ORGANIZER`, `ADMIN` |
 
----
+### `Ticket.java`
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `Long` | Primary key |
+| `qrData` | `String` | Unique QR code string |
+| `status` | `TicketStatus` (enum) | `UNUSED`, `USED` |
+| `generatedAt` | `LocalDateTime` | Use `getGeneratedAt()` — NOT `getCreatedAt()` |
+| `event` | `Event` | FK |
+| `user` | `User` | FK |
 
-### Phase 3 — Live Crowd Monitoring & Alerts
-
-The core "smart" feature. Uses attendance data from Phase 2 to track live capacity and trigger alerts when thresholds are crossed.
-
-**New files:**
-- `CrowdService.java` — Capacity tracking and threshold logic
-- `AlertService.java` — Notification trigger logic
-- `CrowdController.java` — REST endpoint for live count data
-- `crowd-dashboard.html` — Live capacity view for organizers
-
-**Features to build:**
-- Live attendee count vs. event capacity
-- Threshold alerts (configurable, e.g. 80% and 100%)
-- Real-time UI updates via WebSocket or polling
-- Event status badges: `Open` / `Nearly Full` / `Full`
-- Email or in-app notification when capacity is reached
-- Auto-close registration when event is full
-
-**Builds on:** `AttendanceRecord.java`, `Event.java` (add `capacity` field)
-
----
-
-### Phase 4 — Organizer Dashboard & Event Lifecycle
-
-Gives organizers full visibility and control over their events, including the state machine transitions and attendee management.
-
-**New files:**
-- `OrganizerController.java` — Organizer-specific endpoints
-- `organizer-dashboard.html` — Dashboard: all events, live stats
-- `event-status.html` — State machine controls per event
-
-**Features to build:**
-- Event state transitions: `Draft → Published → Ongoing → Completed`
-- View full registration and attendance list per event
-- Download attendee list as CSV
-- Close or cancel an event early
-- Per-event stats: registered count, checked-in count, no-shows
-
-**Builds on:** Phase 1 role system, Phase 3 crowd data
+### `AttendanceRecord.java`
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `Long` | Primary key |
+| `checkInTime` | `LocalDateTime` | |
+| `scannedBy` | `String` | Username of organizer who scanned |
+| `user` | `User` | FK — student who checked in |
+| `event` | `Event` | FK |
+| `ticket` | `Ticket` | FK |
 
 ---
 
-### Phase 5 — Admin Monitoring & Reports
+## Repository Method Reference
 
-System-wide visibility for the Admin role. Aggregates data across all events and produces downloadable reports.
+### `EventRepository`
+```java
+List<Event> findByOrganizerId(Long organizerId);   // used in OrganizerController
+Optional<Event> findById(Long id);
+List<Event> findAll();                              // used in AdminController (Phase 5)
+```
 
-**New files:**
-- `AdminController.java` — Admin-only endpoints
+### `TicketRepository`
+```java
+List<Ticket> findByEventIdOrderByIdDesc(Long eventId);
+int countByEventId(Long eventId);
+Optional<Ticket> findByQrData(String qrData);
+```
+
+### `AttendanceRecordRepository`
+```java
+List<AttendanceRecord> findByEventId(Long eventId);
+int countByEventId(Long eventId);
+```
+
+### `UserRepository`
+```java
+Optional<User> findByUsername(String username);
+Optional<User> findByEmail(String email);
+List<User> findByRole(Role role);                  // useful for Phase 5 admin
+```
+
+---
+
+## Phase 0 — Foundation ✅
+
+Core event and ticketing system.
+
+**Files:** `Event.java`, `Ticket.java`, `EventController.java`, `QRService.java`, `event.html`
+
+**Features:** Event CRUD, student registration, QR code generation, ticket system, event listing UI.
+
+---
+
+## Phase 1 — User Authentication & Roles ✅
+
+**Files:** `User.java`, `UserController.java`, `SecurityConfig.java`, `login.html`, `register.html`
+
+**Features:** Spring Security login/registration, BCrypt password hashing, role-based access (`STUDENT`, `ORGANIZER`, `ADMIN`), session management, `@PreAuthorize` guards on controllers.
+
+**Security config key points:**
+- `/register`, `/login`, `/h2-console/**` are permitted without auth
+- H2 console requires `csrf.ignoringRequestMatchers("/h2-console/**")` and `headers.frameOptions.disable()`
+- `@AuthenticationPrincipal` injects `UserDetails`, not the `User` entity directly — always look up the `User` entity via `userRepository.findByUsername(userDetails.getUsername())`
+
+---
+
+## Phase 2 — QR Check-in & Attendance Tracking ✅
+
+**Files:** `CheckInController.java`, `AttendanceRecord.java`, `checkin.html`, `scanner.html`
+
+**Features:** Browser camera QR scanning (`html5-qrcode` JS library), server-side ticket validation, duplicate scan prevention, mark ticket as `USED`, attendance log with timestamp, live check-in count.
+
+---
+
+## Phase 3 — Live Crowd Monitoring & Alerts ✅
+
+### New Files Added
+
+**`CrowdService.java`**
+- `getLiveCount(Long eventId)` → calls `attendanceRecordRepository.countByEventId()`
+- `getRegisteredCount(Long eventId)` → calls `ticketRepository.countByEventId()`
+- `getCrowdStatus(Long eventId)` → returns `CrowdStatus` enum: `OPEN`, `NEARLY_FULL`, `FULL`
+  - `NEARLY_FULL` threshold: ≥ 80% capacity
+  - `FULL` threshold: ≥ 100% capacity
+- `getCrowdSnapshot(Long eventId)` → returns `Map<String, Object>` with keys: `eventId`, `eventName`, `checkedIn`, `registered`, `capacity`, `status`, `percent`
+- `isRegistrationOpen(Long eventId)` → returns false when status is `FULL`
+
+**`AlertService.java`**
+- `getAlertLevel(Long eventId)` → returns `AlertLevel` enum: `NONE`, `WARNING`, `CRITICAL`
+- `getAlertMessage(Long eventId)` → returns human-readable alert string or null
+- `isNewAlert(Long eventId)` → tracks state changes using in-memory `ConcurrentHashMap`
+
+**`CrowdController.java`** (`/api/crowd/`)
+- `GET /api/crowd/{eventId}/snapshot` → returns full JSON snapshot including alert info; requires `ORGANIZER` or `ADMIN` role
+- `GET /api/crowd/{eventId}/registration-open` → returns `{"open": true/false}`
+
+**`crowd-dashboard.html`**
+- Polls `/api/crowd/{eventId}/snapshot` every **5 seconds** via `fetch()`
+- Shows: checked-in count, registered count, capacity, % full
+- Capacity bar changes color: green (OPEN) → yellow (NEARLY_FULL) → red (FULL)
+- Alert banner appears at top when WARNING or CRITICAL
+- `eventId` is injected via Thymeleaf: `const eventId = /*[[${eventId}]]*/ 1;`
+
+### Snapshot JSON Shape
+```json
+{
+  "eventId": 1,
+  "eventName": "Tech Fest",
+  "checkedIn": 4,
+  "registered": 5,
+  "capacity": 5,
+  "status": "NEARLY_FULL",
+  "percent": 80,
+  "alertMessage": "⚠️ Event \"Tech Fest\" is nearly full (80%+ capacity).",
+  "alertLevel": "WARNING"
+}
+```
+
+---
+
+## Phase 4 — Organizer Dashboard & Event Lifecycle ✅
+
+### New Files Added
+
+**`OrganizerController.java`** (`/organizer/`, requires `ORGANIZER` role)
+
+Key pattern — `@AuthenticationPrincipal` gives `UserDetails`, not `User`:
+```java
+// Always resolve User entity like this:
+User organizer = userRepository.findByUsername(userDetails.getUsername())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+```
+
+Endpoints:
+- `GET /organizer/dashboard` → lists all events for logged-in organizer using `findByOrganizerId()`; attaches crowd snapshot for each
+- `GET /organizer/events/{id}` → event detail: tickets, attendance records, no-show count, snapshot
+- `POST /organizer/events/{id}/transition?targetStatus=PUBLISHED` → state machine transition with guard logic
+- `GET /organizer/events/{id}/attendees/csv` → CSV download via OpenCSV
+- `GET /organizer/crowd/{eventId}` → renders `crowd-dashboard.html`
+
+**State machine transition guards:**
+```
+DRAFT      → PUBLISHED or (nothing else)
+PUBLISHED  → ONGOING or CANCELLED
+ONGOING    → COMPLETED or CANCELLED
+COMPLETED  → (terminal, no transitions)
+CANCELLED  → (terminal, no transitions)
+```
+
+**`organizer-dashboard.html`**
+- Table columns: Event, Date, Status, Registered, Checked In, Capacity, Crowd, Actions
+- Actions per row: Details button → `/organizer/events/{id}`, Live button → `/organizer/crowd/{id}`, CSV button → `/organizer/events/{id}/attendees/csv`
+- Uses `snapshots[iter.index]` to display per-event crowd stats alongside Thymeleaf event loop
+
+**`event-status.html`**
+- Left card: Event lifecycle state machine (visual nodes: DRAFT → PUBLISHED → ONGOING → COMPLETED), transition buttons shown conditionally based on current status
+- Right card: Live stats (registered, checked-in, no-shows, capacity) + CSV download button
+- Bottom card: Registrations & Attendance table
+
+### CSV Export
+Uses **OpenCSV 5.9** (`com.opencsv:opencsv:5.9` in `pom.xml`).
+CSV headers: `Student Name, Email, Ticket ID, Status, Registered At`
+Uses `ticket.user.username` and `ticket.generatedAt` (not `name` or `createdAt`).
+
+---
+
+## Phase 5 — Admin Monitoring & Reports 🔜
+
+**Files to create:**
+- `AdminController.java` — Admin-only endpoints (`/admin/`)
 - `ReportService.java` — Aggregate stats and export logic
-- `admin-dashboard.html` — All events overview
+- `admin-dashboard.html` — All events overview across all organizers
 - `reports.html` — Filter and download reports
 
 **Features to build:**
-- System-wide event overview (all organizers, all events)
+- System-wide event overview (all organizers, all events) using `eventRepository.findAll()`
 - Crowd analytics across events (peak attendance, capacity trends)
 - Generate and download PDF or CSV reports
-- Filter reports by date range, department, or organizer
-- Event state diagram view per event
-- Audit log: who checked in, at what time, which scanner
+- Filter reports by date range or organizer
+- Audit log view: who checked in, at what time, which scanner (`AttendanceRecord.scannedBy`)
 
-**Builds on:** All prior phases — full data is available by this stage
+**Key data available for Phase 5:**
+- All events: `eventRepository.findAll()`
+- All check-ins: `attendanceRecordRepository.findAll()` or `findByEventId()`
+- All tickets: `ticketRepository.findAll()` or `findByEventId()`
+- All users by role: `userRepository.findByRole(Role.ORGANIZER)`
+- Live crowd snapshot for any event: `crowdService.getCrowdSnapshot(eventId)`
+
+**Security:** All `/admin/**` endpoints must be guarded with `@PreAuthorize("hasRole('ADMIN')")`.
+
+**PDF generation suggestion:** Use `iText` or `Apache PDFBox` library. Add to `pom.xml` before starting.
+
+**Builds on:** All prior phases — all data is available. Inject and reuse `CrowdService` for live stats per event.
 
 ---
 
@@ -153,31 +287,45 @@ System-wide visibility for the Admin role. Aggregates data across all events and
 
 | Layer | Technology |
 |---|---|
-| Backend | Java, Spring MVC |
-| Security | Spring Security |
-| Frontend | Thymeleaf / HTML + JavaScript |
+| Backend | Java 17, Spring Boot 3.3.4, Spring MVC |
+| Security | Spring Security 6.3.3 |
+| Frontend | Thymeleaf 3.1, HTML + JavaScript |
 | QR Scanning | `html5-qrcode` (JS library) |
-| Real-time | WebSocket or HTTP polling |
-| Database | JPA / Hibernate (MySQL or H2) |
-| Reports | CSV export / PDF generation |
+| Real-time | HTTP Polling (5s interval fetch) |
+| Database | JPA / Hibernate 6.5, H2 (in-memory, resets on restart) |
+| CSV Export | OpenCSV 5.9 |
+| Build | Maven (Spring Boot 3.3.4) |
+
+**H2 Console:** `http://localhost:8080/h2-console`
+- JDBC URL: `jdbc:h2:mem:eventdb`
+- Username: `SA`, Password: *(blank)*
+
+> ⚠️ H2 is in-memory — all data is lost on every restart and must be re-seeded.
 
 ---
 
-## Getting Started
+## Re-seed SQL (run after every restart)
 
-1. Clone the repository
-2. Configure your database in `application.properties`
-3. Run the Spring Boot application
-4. Navigate to `/register` to create an account
-5. Log in and select your role to get started
+```sql
+-- Assumes organizer has id=1 and student has id=2
+-- Register accounts via /register first, then check ids with:
+-- SELECT id, username, role FROM users;
+
+INSERT INTO events (title, description, location, start_time, end_time, capacity, status, organizer_id)
+VALUES ('Tech Fest', 'Annual tech event', 'Main Hall', '2026-05-01 10:00:00', '2026-05-01 18:00:00', 5, 'DRAFT', 1);
+
+INSERT INTO tickets (qr_data, status, generated_at, event_id, user_id)
+VALUES ('QR-TEST-001', 'UNUSED', NOW(), 1, 2);
+
+INSERT INTO attendance_records (check_in_time, scanned_by, user_id, event_id, ticket_id)
+VALUES (NOW(), 'organizer1', 2, 1, 1);
+```
 
 ---
 
 ## Development Order
 
-Build and demo after each phase — each phase is independently functional:
-
 ```
-Phase 0 (done) → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
-   Foundation      Auth      Check-in   Crowd      Organizer   Admin
+Phase 0 (✅) → Phase 1 (✅) → Phase 2 (✅) → Phase 3 (✅) → Phase 4 (✅) → Phase 5 🔜
+  Foundation      Auth         Check-in       Crowd          Organizer       Admin
 ```

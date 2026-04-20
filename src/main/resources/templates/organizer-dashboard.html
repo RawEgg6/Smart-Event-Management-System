@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Organizer Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f0f2f5; padding: 28px; }
+    h1   { color: #1a1a2e; margin-bottom: 4px; }
+    .sub { color: #666; margin-bottom: 28px; font-size: 14px; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,.07); }
+    th { background: #1a1a2e; color: #fff; padding: 14px 16px; text-align: left; font-size: 13px; }
+    td { padding: 13px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8f9ff; }
+
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 99px;
+             font-size: 12px; font-weight: 700; }
+    .badge-DRAFT      { background:#e9ecef; color:#495057; }
+    .badge-PUBLISHED  { background:#cce5ff; color:#004085; }
+    .badge-ONGOING    { background:#d4edda; color:#155724; }
+    .badge-COMPLETED  { background:#d1ecf1; color:#0c5460; }
+    .badge-CANCELLED  { background:#f8d7da; color:#721c24; }
+
+    .crowd-OPEN        { color: #28a745; font-weight: 700; }
+    .crowd-NEARLY_FULL { color: #ffc107; font-weight: 700; }
+    .crowd-FULL        { color: #dc3545; font-weight: 700; }
+
+    a.btn { display: inline-block; padding: 6px 14px; border-radius: 6px;
+            text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 4px; }
+    .btn-primary { background: #4361ee; color: #fff; }
+    .btn-crowd   { background: #17a2b8; color: #fff; }
+    .btn-csv     { background: #28a745; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>📋 Organizer Dashboard</h1>
+  <p class="sub">Manage your events and monitor live attendance</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Registered</th>
+        <th>Checked In</th>
+        <th>Capacity</th>
+        <th>Crowd</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="event, iter : ${events}"
+          th:with="snap=${snapshots[iter.index]}">
+        <td th:text="${event.title}">Event Name</td>
+        <td th:text="${event.startTime}">Date</td>
+        <td>
+          <span class="badge"
+                th:classappend="'badge-' + ${event.status}"
+                th:text="${event.status}">DRAFT</span>
+        </td>
+        <td th:text="${snap['registered']}">0</td>
+        <td th:text="${snap['checkedIn']}">0</td>
+        <td th:text="${snap['capacity']}">0</td>
+        <td>
+          <span th:classappend="'crowd-' + ${snap['status']}"
+                th:text="${snap['status']}">OPEN</span>
+        </td>
+        <td>
+          <a class="btn btn-primary"
+             th:href="@{/organizer/events/{id}(id=${event.id})}">Details</a>
+          <a class="btn btn-crowd"
+             th:href="@{/organizer/crowd/{id}(id=${event.id})}">Live</a>
+          <a class="btn btn-csv"
+             th:href="@{/organizer/events/{id}/attendees/csv(id=${event.id})}">CSV</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

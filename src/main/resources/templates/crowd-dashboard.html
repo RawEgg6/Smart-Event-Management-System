@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Live Crowd Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f0f2f5; padding: 24px; }
+
+    h1 { color: #1a1a2e; margin-bottom: 6px; }
+    .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+
+    /* Alert banner */
+    #alert-banner {
+      display: none;
+      padding: 14px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    #alert-banner.WARNING  { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+    #alert-banner.CRITICAL { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* Stat cards */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
+      text-align: center;
+    }
+    .card .value { font-size: 42px; font-weight: 700; color: #1a1a2e; }
+    .card .label { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* Capacity bar */
+    .bar-wrap { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 28px; }
+    .bar-wrap h3 { margin-bottom: 14px; color: #333; font-size: 15px; }
+    .bar-bg { background: #e9ecef; border-radius: 99px; height: 24px; overflow: hidden; }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #28a745;
+      transition: width .6s ease, background .4s;
+      display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+      color: #fff; font-size: 13px; font-weight: 600;
+    }
+    .bar-fill.WARNING  { background: #ffc107; color: #333; }
+    .bar-fill.CRITICAL { background: #dc3545; }
+
+    /* Status badge */
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-weight: 700;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    .badge.OPEN        { background: #d4edda; color: #155724; }
+    .badge.NEARLY_FULL { background: #fff3cd; color: #856404; }
+    .badge.FULL        { background: #f8d7da; color: #721c24; }
+
+    .last-updated { color: #aaa; font-size: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <h1>📊 Live Crowd Dashboard</h1>
+  <p class="subtitle" id="event-name">Loading event data…</p>
+
+  <!-- Alert banner -->
+  <div id="alert-banner"></div>
+
+  <!-- Stat cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="value" id="checked-in">–</div>
+      <div class="label">Checked In</div>
+    </div>
+    <div class="card">
+      <div class="value" id="registered">–</div>
+      <div class="label">Registered</div>
+    </div>
+    <div class="card">
+      <div class="value" id="capacity">–</div>
+      <div class="label">Capacity</div>
+    </div>
+    <div class="card">
+      <div class="value" id="percent">–</div>
+      <div class="label">% Full</div>
+    </div>
+  </div>
+
+  <!-- Capacity bar -->
+  <div class="bar-wrap">
+    <h3>Capacity Usage</h3>
+    <div class="bar-bg">
+      <div class="bar-fill" id="bar-fill" style="width:0%">0%</div>
+    </div>
+    <div>
+      <span class="badge" id="status-badge">–</span>
+    </div>
+    <p class="last-updated">Last updated: <span id="last-updated">–</span></p>
+  </div>
+
+  <script th:inline="javascript">
+    // Thymeleaf injects the eventId from the URL path variable
+    const eventId = /*[[${eventId}]]*/ 1;
+
+    async function poll() {
+      try {
+        const res  = await fetch(`/api/crowd/${eventId}/snapshot`);
+        const data = await res.json();
+
+        // Cards
+        document.getElementById('event-name').textContent  = data.eventName;
+        document.getElementById('checked-in').textContent  = data.checkedIn;
+        document.getElementById('registered').textContent  = data.registered;
+        document.getElementById('capacity').textContent    = data.capacity;
+        document.getElementById('percent').textContent     = data.percent + '%';
+
+        // Capacity bar
+        const bar = document.getElementById('bar-fill');
+        bar.style.width    = data.percent + '%';
+        bar.textContent    = data.percent + '%';
+        bar.className      = 'bar-fill ' + data.status;
+
+        // Status badge
+        const badge = document.getElementById('status-badge');
+        badge.textContent  = data.status.replace('_', ' ');
+        badge.className    = 'badge ' + data.status;
+
+        // Alert banner
+        const banner = document.getElementById('alert-banner');
+        if (data.alertMessage && data.alertLevel !== 'NONE') {
+          banner.textContent  = data.alertMessage;
+          banner.className    = data.alertLevel;   // 'WARNING' or 'CRITICAL'
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+
+        document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }
+
+    poll();                        // immediate first fetch
+    setInterval(poll, 5000);       // then every 5 seconds
+  </script>
+</body>
+</html>

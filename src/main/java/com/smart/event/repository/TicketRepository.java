@@ -9,4 +9,5 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> findByQrData(String qrData);
 
     List<Ticket> findByEventIdOrderByIdDesc(Long eventId);
+    int countByEventId(Long eventId);
 }
