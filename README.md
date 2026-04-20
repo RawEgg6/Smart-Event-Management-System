@@ -41,7 +41,7 @@ Core event and ticketing system already in place.
 
 ---
 
-### Phase 1 — User Authentication & Roles
+### Phase 1 — User Authentication & Roles(✅comepleted)
 
 Adds Spring Security so the app knows who is a Student, Organizer, or Admin. All subsequent phases depend on authenticated users.
 
@@ -63,7 +63,7 @@ Adds Spring Security so the app knows who is a Student, Organizer, or Admin. All
 
 ---
 
-### Phase 2 — QR Check-in & Attendance Tracking
+### Phase 2 — QR Check-in & Attendance Tracking(✅completed)
 
 Activates the QR codes generated in Phase 0. Organizers can scan tickets at the venue; the system validates and logs each check-in.
 
