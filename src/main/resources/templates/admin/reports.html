@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Reports</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; }
+    header { background: #1a1a2e; color: white; padding: 16px 32px;
+             display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.4rem; }
+    nav a { color: #adb; text-decoration: none; margin-left: 20px; font-size: 0.95rem; }
+    nav a:hover { color: white; }
+    .container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+    .filter-card { background: white; border-radius: 10px; padding: 24px;
+                   box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .filter-card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #1a1a2e; }
+    .filter-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.85rem; color: #666; font-weight: 600; }
+    input[type=date], select {
+      padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+      font-size: 0.9rem; background: white; }
+    .btn { padding: 9px 20px; border: none; border-radius: 6px;
+           font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: none;
+           display: inline-block; }
+    .btn-primary   { background: #1a1a2e; color: white; }
+    .btn-green     { background: #28a745; color: white; }
+    .btn-red       { background: #dc3545; color: white; }
+    .btn:hover { opacity: 0.88; }
+    .download-row  { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; background: white;
+            border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    th { background: #1a1a2e; color: white; padding: 12px 16px; text-align: left; font-size: 0.85rem; }
+    td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9f9ff; }
+    .result-count { margin-bottom: 12px; color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📊 Reports</h1>
+  <nav>
+    <a th:href="@{/admin/dashboard}">Dashboard</a>
+    <a th:href="@{/admin/reports}">Reports</a>
+    <a th:href="@{/admin/audit}">Audit Log</a>
+    <a th:href="@{/logout}">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Filter Form -->
+  <div class="filter-card">
+    <h2>🔍 Filter Report</h2>
+    <form th:action="@{/admin/reports}" method="get">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>From Date</label>
+          <input type="date" name="from" th:value="${from}"/>
+        </div>
+        <div class="filter-group">
+          <label>To Date</label>
+          <input type="date" name="to" th:value="${to}"/>
+        </div>
+        <div class="filter-group">
+          <label>Organizer</label>
+          <select name="organizer">
+            <option value="">-- All Organizers --</option>
+            <option th:each="org : ${organizers}"
+                    th:value="${org}" th:text="${org}"
+                    th:selected="${org == organizer}">
+            </option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Apply Filter</button>
+        <a th:href="@{/admin/reports}" class="btn" style="background:#888;color:white;">Reset</a>
+      </div>
+    </form>
+
+    <!-- Download Buttons -->
+    <div class="download-row">
+      <a class="btn btn-green"
+         th:href="@{/admin/reports/download/csv(from=${from},to=${to},organizer=${organizer})}">
+        ⬇ Download CSV
+      </a>
+      <a class="btn btn-red"
+         th:href="@{/admin/reports/download/pdf(from=${from},to=${to},organizer=${organizer})}">
+        ⬇ Download PDF
+      </a>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <p class="result-count" th:text="${#lists.size(events)} + ' event(s) found'"></p>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Event Name</th><th>Date</th><th>Status</th>
+        <th>Capacity</th><th>Organizer</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr th:each="event : ${events}">
+        <td th:text="${event.id}"></td>
+        <td th:text="${event.title}"></td>
+        <td th:text="${event.startTime}"></td>
+        <td th:text="${event.status}"></td>
+        <td th:text="${event.capacity}"></td>
+        <td th:text="${event.organizer?.username ?: 'N/A'}"></td>
+        </tr>
+      <tr th:if="${#lists.isEmpty(events)}">
+        <td colspan="6" style="text-align:center;color:#999;">No events match your filters.</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+</body>
+</html>

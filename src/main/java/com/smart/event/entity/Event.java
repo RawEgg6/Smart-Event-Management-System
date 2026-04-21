@@ -27,6 +27,10 @@ public class Event {
 
     private LocalDateTime endTime;
 
+    private String status = "DRAFT";
+
+    private int capacity;
+
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     private User organizer;
@@ -85,5 +89,21 @@ public class Event {
 
     public void setOrganizer(User organizer) {
         this.organizer = organizer;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
     }
 }
