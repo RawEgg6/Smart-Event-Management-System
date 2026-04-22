@@ -1,172 +1,221 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
   <meta charset="UTF-8"/>
-  <title>Event Details</title>
+  <title>Event Details | SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { background: #f0f2f5; padding: 28px; }
-    h1   { color: #1a1a2e; margin-bottom: 4px; }
-    .sub { color: #666; margin-bottom: 28px; font-size: 14px; }
+    :root{--nav-bg:#0f0f13;--nav-border:rgba(255,255,255,0.07);--nav-text:#c9c9d0;--nav-accent:#7c6af7;
+      --nav-accent-hover:#9d8fff;--nav-pill:rgba(124,106,247,0.12);--nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12);--nav-logout-hover:rgba(239,68,68,0.22);--nav-logout-text:#f87171;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#f4f5f8;min-height:100vh;}
 
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-    .card { background: #fff; border-radius: 12px; padding: 22px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.07); }
-    .card h3 { margin-bottom: 14px; color: #333; font-size: 15px; }
+    .navbar{position:sticky;top:0;z-index:100;background:var(--nav-bg);border-bottom:1px solid var(--nav-border);
+      display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;gap:24px;}
+    .navbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
+      text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .brand-dot{width:8px;height:8px;background:var(--nav-accent);border-radius:50%;}
+    .navbar-links{display:flex;align-items:center;gap:4px;flex:1;}
+    .navbar-links a{color:var(--nav-text);text-decoration:none;font-size:13.5px;font-weight:500;
+      padding:6px 13px;border-radius:8px;transition:background .15s,color .15s;}
+    .navbar-links a:hover{background:var(--nav-pill-hover);color:#fff;}
+    .navbar-links a.active{background:var(--nav-pill);color:var(--nav-accent-hover);}
+    .navbar-right{display:flex;align-items:center;gap:10px;}
+    .navbar-user{font-size:13px;color:var(--nav-text);padding:5px 12px;background:rgba(255,255,255,0.05);border-radius:20px;white-space:nowrap;}
+    .navbar-user strong{color:#fff;}
+    .role-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:99px;}
+    .role-badge.organizer{background:rgba(52,211,153,0.15);color:#34d399;}
+    .role-badge.admin{background:rgba(251,191,36,0.15);color:#fbbf24;}
+    .navbar-logout{color:var(--nav-logout-text)!important;background:var(--nav-logout)!important;
+      font-size:13px!important;font-weight:600!important;padding:6px 14px!important;
+      border-radius:8px!important;text-decoration:none;}
+    .navbar-logout:hover{background:var(--nav-logout-hover)!important;}
+
+    .page-wrap{padding:32px;max-width:1200px;margin:0 auto;}
+    .page-header{margin-bottom:28px;}
+    .page-header h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-.5px;}
+    .page-header .breadcrumb{color:#888;font-size:14px;margin-top:6px;display:flex;align-items:center;gap:8px;}
+    .page-header .breadcrumb a{color:#7c6af7;text-decoration:none;}
+    .page-header .breadcrumb span{color:#ccc;}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+    .card{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);padding:24px;}
+    .card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:18px;}
 
     /* State machine */
-    .state-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-    .state-node { padding: 8px 18px; border-radius: 99px; font-size: 13px; font-weight: 700; border: 2px solid transparent; }
-    .state-node.active  { background: #1a1a2e; color: #fff; }
-    .state-node.done    { background: #d4edda; color: #155724; }
-    .state-node.pending { background: #e9ecef; color: #888; }
-    .arrow { color: #aaa; font-size: 18px; }
+    .state-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+    .state-node{padding:7px 16px;border-radius:99px;font-size:12.5px;font-weight:700;border:2px solid transparent;}
+    .state-node.active {background:#1a1a2e;color:#fff;border-color:#1a1a2e;}
+    .state-node.done   {background:#dcfce7;color:#15803d;border-color:#bbf7d0;}
+    .state-node.pending{background:#f4f4f4;color:#aaa;}
+    .arrow{color:#ccc;font-size:16px;}
 
     /* Transition buttons */
-    .btn { padding: 9px 20px; border: none; border-radius: 8px; cursor: pointer;
-           font-size: 14px; font-weight: 600; margin-right: 8px; }
-    .btn-publish  { background: #4361ee; color: #fff; }
-    .btn-start    { background: #28a745; color: #fff; }
-    .btn-complete { background: #17a2b8; color: #fff; }
-    .btn-cancel   { background: #dc3545; color: #fff; }
-    .btn-csv      { background: #6c757d; color: #fff; text-decoration: none;
-                    display: inline-block; padding: 9px 20px; border-radius: 8px; }
+    .transition-btns{display:flex;gap:10px;flex-wrap:wrap;}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:9px;
+      font-size:13.5px;font-weight:600;font-family:'DM Sans',sans-serif;
+      border:none;cursor:pointer;text-decoration:none;transition:opacity .15s;}
+    .btn:hover{opacity:.82;}
+    .btn-publish {background:#7c6af7;color:#fff;}
+    .btn-start   {background:#16a34a;color:#fff;}
+    .btn-complete{background:#0891b2;color:#fff;}
+    .btn-cancel  {background:#dc3545;color:#fff;}
+    .btn-csv     {background:#f4f5f8;color:#555;border:1.5px solid #e5e5e5;}
 
-    /* Stats row */
-    .stats { display: flex; gap: 16px; margin-bottom: 8px; }
-    .stat  { text-align: center; }
-    .stat .val { font-size: 32px; font-weight: 700; color: #1a1a2e; }
-    .stat .lbl { font-size: 12px; color: #888; }
+    /* Stats */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+    .stat-box{background:#f8f9ff;border-radius:10px;padding:14px;text-align:center;}
+    .stat-box .val{font-size:30px;font-weight:800;color:#1a1a2e;font-family:'Syne',sans-serif;line-height:1;}
+    .stat-box .lbl{font-size:11.5px;color:#888;margin-top:4px;}
 
     /* Table */
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f8f9fa; color: #555; padding: 10px 14px;
-         text-align: left; font-size: 12px; border-bottom: 2px solid #dee2e6; }
-    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+    .table-card{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;}
+    .table-card .th-row{padding:18px 22px 0;margin-bottom:12px;}
+    .table-card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;padding:18px 22px 0;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:#fafafa;color:#888;padding:11px 18px;text-align:left;
+      font-size:11.5px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid #f0f0f0;}
+    td{padding:13px 18px;border-bottom:1px solid #f7f7f7;font-size:13.5px;color:#333;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#fafbff;}
 
-    .badge { padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
-    .badge-USED    { background: #d4edda; color: #155724; }
-    .badge-ACTIVE  { background: #cce5ff; color: #004085; }
+    .t-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;}
+    .t-badge-USED  {background:#dcfce7;color:#15803d;}
+    .t-badge-UNUSED{background:#dbeafe;color:#1d4ed8;}
+
+    @media(max-width:768px){.grid-2{grid-template-columns:1fr;}.stats-row{grid-template-columns:repeat(2,1fr);}}
   </style>
 </head>
 <body>
 
-  <h1 th:text="${event.title}">Event Name</h1>
-  <p class="sub">
-    <a href="/organizer/dashboard">← Dashboard</a>
-    &nbsp;|&nbsp;
-    <a th:href="@{/organizer/crowd/{id}(id=${event.id})}">📊 Live Crowd View</a>
-  </p>
-
-  <div class="grid">
-
-    <!-- State Machine Card -->
-    <div class="card">
-      <h3>Event Lifecycle</h3>
-
-      <!-- Visual state flow -->
-        <div class="state-flow">
-            <span class="state-node"
-                    th:classappend="${event.status.name() == 'DRAFT'} ? 'active' : 'done'">DRAFT</span>
-            <span class="arrow">→</span>
-
-            <span class="state-node"
-                    th:classappend="${event.status.name() == 'PUBLISHED'} ? 'active' :
-                                    (${event.status.name() == 'DRAFT'} ? 'pending' : 'done')">PUBLISHED</span>
-            <span class="arrow">→</span>
-
-            <span class="state-node"
-                    th:classappend="${event.status.name() == 'ONGOING'} ? 'active' :
-                                    (${event.status.name() == 'COMPLETED'} ? 'done' : 'pending')">ONGOING</span>
-            <span class="arrow">→</span>
-
-            <span class="state-node"
-                    th:classappend="${event.status.name() == 'COMPLETED'} ? 'active' : 'pending'">COMPLETED</span>
-        </div>
-
-      <!-- Transition buttons — show only the valid next step -->
-      <form method="post"
-            th:action="@{/organizer/events/{id}/transition(id=${event.id})}">
-
-        <button class="btn btn-publish"
-                name="targetStatus" value="PUBLISHED"
-                th:if="${event.status.name() == 'DRAFT'}">
-          Publish Event
-        </button>
-        <button class="btn btn-start"
-                name="targetStatus" value="ONGOING"
-                th:if="${event.status.name() == 'PUBLISHED'}">
-          Start Event
-        </button>
-        <button class="btn btn-complete"
-                name="targetStatus" value="COMPLETED"
-                th:if="${event.status.name() == 'ONGOING'}">
-          Mark Completed
-        </button>
-        <button class="btn btn-cancel"
-                name="targetStatus" value="CANCELLED"
-                th:if="${event.status.name() == 'PUBLISHED' or event.status.name() == 'ONGOING'}">
-          Cancel Event
-        </button>
-      </form>
+  <nav class="navbar">
+    <a class="navbar-brand" th:href="@{/organizer/dashboard}"><span class="brand-dot"></span>SmartEvent</a>
+    <div class="navbar-links">
+      <th:block sec:authorize="hasRole('ORGANIZER')">
+        <a th:href="@{/organizer/dashboard}">Dashboard</a>
+        <a th:href="@{/events}">Events</a>
+        <a th:href="@{/checkin}">Check-in</a>
+        <a th:href="@{/scanner}">Scanner</a>
+      </th:block>
+      <th:block sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/dashboard}">Dashboard</a>
+        <a th:href="@{/admin/reports}">Reports</a>
+        <a th:href="@{/events}">Events</a>
+      </th:block>
     </div>
-
-    <!-- Live Stats Card -->
-    <div class="card">
-      <h3>Live Stats</h3>
-      <div class="stats">
-        <div class="stat">
-          <div class="val" th:text="${snapshot['registered']}">0</div>
-          <div class="lbl">Registered</div>
-        </div>
-        <div class="stat">
-          <div class="val" th:text="${snapshot['checkedIn']}">0</div>
-          <div class="lbl">Checked In</div>
-        </div>
-        <div class="stat">
-          <div class="val" th:text="${noShows}">0</div>
-          <div class="lbl">No-Shows</div>
-        </div>
-        <div class="stat">
-          <div class="val" th:text="${snapshot['capacity']}">0</div>
-          <div class="lbl">Capacity</div>
-        </div>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">User</strong>&nbsp;
+        <span class="role-badge organizer" sec:authorize="hasRole('ORGANIZER')">Organizer</span>
+        <span class="role-badge admin"     sec:authorize="hasRole('ADMIN')">Admin</span>
       </div>
-      <a class="btn-csv"
-         th:href="@{/organizer/events/{id}/attendees/csv(id=${event.id})}">
-        ⬇ Download CSV
-      </a>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="page-header">
+      <h1 th:text="${event.title}">Event Name</h1>
+      <div class="breadcrumb">
+        <a href="/organizer/dashboard">← Dashboard</a>
+        <span>·</span>
+        <a th:href="@{/organizer/crowd/{id}(id=${event.id})}">📊 Live Crowd View</a>
+      </div>
     </div>
 
-  </div>
+    <div class="grid-2">
+      <!-- State Machine Card -->
+      <div class="card">
+        <h3>Event Lifecycle</h3>
+        <div class="state-flow">
+          <span class="state-node"
+                th:classappend="${event.status.name() == 'DRAFT'} ? 'active' : 'done'">DRAFT</span>
+          <span class="arrow">→</span>
+          <span class="state-node"
+                th:classappend="${event.status.name() == 'PUBLISHED'} ? 'active' :
+                                (${event.status.name() == 'DRAFT'} ? 'pending' : 'done')">PUBLISHED</span>
+          <span class="arrow">→</span>
+          <span class="state-node"
+                th:classappend="${event.status.name() == 'ONGOING'} ? 'active' :
+                                (${event.status.name() == 'COMPLETED'} ? 'done' : 'pending')">ONGOING</span>
+          <span class="arrow">→</span>
+          <span class="state-node"
+                th:classappend="${event.status.name() == 'COMPLETED'} ? 'active' : 'pending'">COMPLETED</span>
+        </div>
 
-  <!-- Attendee Table -->
-  <div class="card">
-    <h3>Registrations &amp; Attendance</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Student</th>
-          <th>Email</th>
-          <th>Ticket ID</th>
-          <th>Status</th>
-          <th>Registered At</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="ticket : ${tickets}">
-          <td th:text="${ticket.user.username}">Name</td>
-          <td th:text="${ticket.user.email}">Email</td>
-          <td th:text="${ticket.id}">1</td>
-          <td>
-            <span class="badge"
-                  th:classappend="'badge-' + ${ticket.status}"
-                  th:text="${ticket.status}">ACTIVE</span>
-          </td>
-          <td th:text="${ticket.generatedAt}">-</td>
-        </tr>
-      </tbody>
-    </table>
+        <form method="post" th:action="@{/organizer/events/{id}/transition(id=${event.id})}">
+          <div class="transition-btns">
+            <button class="btn btn-publish"  name="targetStatus" value="PUBLISHED"
+                    th:if="${event.status.name() == 'DRAFT'}">Publish Event</button>
+            <button class="btn btn-start"    name="targetStatus" value="ONGOING"
+                    th:if="${event.status.name() == 'PUBLISHED'}">Start Event</button>
+            <button class="btn btn-complete" name="targetStatus" value="COMPLETED"
+                    th:if="${event.status.name() == 'ONGOING'}">Mark Completed</button>
+            <button class="btn btn-cancel"   name="targetStatus" value="CANCELLED"
+                    th:if="${event.status.name() == 'PUBLISHED' or event.status.name() == 'ONGOING'}">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Live Stats Card -->
+      <div class="card">
+        <h3>Live Stats</h3>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="val" th:text="${snapshot['registered']}">0</div>
+            <div class="lbl">Registered</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" th:text="${snapshot['checkedIn']}">0</div>
+            <div class="lbl">Checked In</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" th:text="${noShows}">0</div>
+            <div class="lbl">No-Shows</div>
+          </div>
+          <div class="stat-box">
+            <div class="val" th:text="${snapshot['capacity']}">0</div>
+            <div class="lbl">Capacity</div>
+          </div>
+        </div>
+        <a class="btn btn-csv" th:href="@{/organizer/events/{id}/attendees/csv(id=${event.id})}">
+          ⬇ Download CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Attendee Table -->
+    <div class="table-card">
+      <h3>Registrations &amp; Attendance</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Email</th>
+            <th>Ticket ID</th>
+            <th>Status</th>
+            <th>Registered At</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="ticket : ${tickets}">
+            <td style="font-weight:500;" th:text="${ticket.user.username}">Name</td>
+            <td th:text="${ticket.user.email}">Email</td>
+            <td style="color:#aaa;font-size:12.5px;" th:text="${ticket.id}">1</td>
+            <td>
+              <span class="t-badge" th:classappend="'t-badge-' + ${ticket.status}" th:text="${ticket.status}">ACTIVE</span>
+            </td>
+            <td style="color:#888;" th:text="${ticket.generatedAt}">–</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </body>

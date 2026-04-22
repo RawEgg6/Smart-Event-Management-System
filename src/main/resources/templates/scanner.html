@@ -1,40 +1,181 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner | Smart Event</title>
-    <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner | SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
+  <style>
+    :root{--nav-bg:#0f0f13;--nav-border:rgba(255,255,255,0.07);--nav-text:#c9c9d0;--nav-accent:#7c6af7;
+      --nav-accent-hover:#9d8fff;--nav-pill:rgba(124,106,247,0.12);--nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12);--nav-logout-hover:rgba(239,68,68,0.22);--nav-logout-text:#f87171;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#f4f5f8;min-height:100vh;}
+
+    .navbar{position:sticky;top:0;z-index:100;background:var(--nav-bg);border-bottom:1px solid var(--nav-border);
+      display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;gap:24px;}
+    .navbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
+      text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .brand-dot{width:8px;height:8px;background:var(--nav-accent);border-radius:50%;}
+    .navbar-links{display:flex;align-items:center;gap:4px;flex:1;}
+    .navbar-links a{color:var(--nav-text);text-decoration:none;font-size:13.5px;font-weight:500;
+      padding:6px 13px;border-radius:8px;transition:background .15s,color .15s;}
+    .navbar-links a:hover{background:var(--nav-pill-hover);color:#fff;}
+    .navbar-links a.active{background:var(--nav-pill);color:var(--nav-accent-hover);}
+    .navbar-right{display:flex;align-items:center;gap:10px;}
+    .navbar-user{font-size:13px;color:var(--nav-text);padding:5px 12px;background:rgba(255,255,255,0.05);border-radius:20px;}
+    .navbar-user strong{color:#fff;}
+    .role-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:99px;}
+    .role-badge.organizer{background:rgba(52,211,153,0.15);color:#34d399;}
+    .role-badge.admin{background:rgba(251,191,36,0.15);color:#fbbf24;}
+    .navbar-logout{color:var(--nav-logout-text)!important;background:var(--nav-logout)!important;
+      font-size:13px!important;font-weight:600!important;padding:6px 14px!important;
+      border-radius:8px!important;text-decoration:none;}
+    .navbar-logout:hover{background:var(--nav-logout-hover)!important;}
+
+    .page-wrap{padding:32px;max-width:600px;margin:0 auto;}
+    .page-header{margin-bottom:28px;}
+    .page-header h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-.5px;}
+    .page-header p{color:#888;font-size:14px;margin-top:4px;}
+    .page-header p a{color:#7c6af7;text-decoration:none;}
+
+    .card{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);padding:24px;margin-bottom:20px;}
+    .card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:16px;}
+
+    #reader{width:100%;border-radius:10px;overflow:hidden;border:2px solid #ebebeb;}
+
+    .result-banner{padding:16px 18px;border-radius:10px;font-size:14.5px;font-weight:500;
+      margin-top:16px;display:none;align-items:center;gap:10px;}
+    .result-banner.success{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
+    .result-banner.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
+    .result-icon{font-size:18px;}
+
+    .hint{font-size:12.5px;color:#aaa;text-align:center;margin-top:12px;}
+    
+    /* New Button Styles */
+    .btn-next { display:none; width:100%; margin-top:16px; padding:12px; background:#1a1a2e; 
+      color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; 
+      cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity 0.15s;}
+    .btn-next:hover { opacity:0.85; }
+  </style>
 </head>
 <body>
-<h2>Camera QR Scanner</h2>
-<div id="reader" style="width: 320px;"></div>
-<div id="scanResult" style="margin-top: 12px;"></div>
 
-<script>
-function onScanSuccess(decodedText) {
-    fetch('/checkin/scan', {
+  <nav class="navbar">
+    <a class="navbar-brand" href="#"><span class="brand-dot"></span>SmartEvent</a>
+    <div class="navbar-links">
+      <th:block sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/dashboard}">Dashboard</a>
+        <a th:href="@{/admin/reports}">Reports</a>
+        <a th:href="@{/events}">Events</a>
+      </th:block>
+      <th:block sec:authorize="hasRole('ORGANIZER')">
+        <a th:href="@{/organizer/dashboard}">Dashboard</a>
+        <a th:href="@{/events}">Events</a>
+        <a th:href="@{/checkin}">Check-in</a>
+        <a th:href="@{/scanner}" class="active">Scanner</a>
+      </th:block>
+      <th:block sec:authorize="hasRole('STUDENT')">
+        <a th:href="@{/events}">Browse Events</a>
+        <a th:href="@{/student/home}">My Tickets</a>
+      </th:block>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">User</strong>&nbsp;
+        <span class="role-badge admin"     sec:authorize="hasRole('ADMIN')">Admin</span>
+        <span class="role-badge organizer" sec:authorize="hasRole('ORGANIZER')">Organizer</span>
+        <span class="role-badge student"   sec:authorize="hasRole('STUDENT')">Student</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+    <div class="page-header">
+      <h1>Camera Scanner</h1>
+      <p>Point the camera at a QR ticket to check in — or use <a th:href="@{/checkin}">manual entry</a></p>
+    </div>
+
+    <div class="card">
+      <h3>📷 Scan QR Ticket</h3>
+      
+      <div id="reader"></div>
+      <p class="hint" id="scannerHint">Allow camera access when prompted. Scanning is active.</p>
+      
+      <div class="result-banner" id="resultBanner">
+        <span class="result-icon" id="resultIcon"></span>
+        <span id="resultText"></span>
+      </div>
+
+      <button class="btn-next" id="scanNextBtn" onclick="resumeScanning()">📷 Scan Next Ticket</button>
+      
+    </div>
+  </div>
+
+  <script>
+    // 1. Create a variable to track if we are currently processing a scan
+    let isProcessing = false;
+
+    function onScanSuccess(decodedText) {
+      // 2. If we are already processing a ticket, ignore all new camera frames
+      if (isProcessing) return; 
+      
+      // 3. Lock the scanner!
+      isProcessing = true;
+      document.getElementById('scannerHint').textContent = "Processing ticket...";
+
+      fetch('/checkin/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ qrData: decodedText })
-    })
-    .then(response => response.json())
-    .then(data => {
-        const result = document.getElementById('scanResult');
-        result.textContent = data.message + (data.eventId ? ' | Event ID: ' + data.eventId : '');
-        result.style.color = data.success ? 'green' : 'red';
-    })
-    .catch(() => {
-        const result = document.getElementById('scanResult');
-        result.textContent = 'Failed to call check-in endpoint';
-        result.style.color = 'red';
-    });
-}
+      })
+      .then(r => r.json())
+      .then(data => {
+        const banner = document.getElementById('resultBanner');
+        const icon = document.getElementById('resultIcon');
+        const text = document.getElementById('resultText');
+        text.textContent = data.message + (data.eventId ? ' · Event #' + data.eventId : '');
+        icon.textContent = data.success ? '✅' : '⛔';
+        banner.className = 'result-banner ' + (data.success ? 'success' : 'error');
+        banner.style.display = 'flex';
+        
+        // 4. Show the button to unlock the scanner
+        document.getElementById('scanNextBtn').style.display = 'block';
+      })
+      .catch(() => {
+        const banner = document.getElementById('resultBanner');
+        document.getElementById('resultIcon').textContent = '⚠️';
+        document.getElementById('resultText').textContent = 'Network error — could not reach server.';
+        banner.className = 'result-banner error';
+        banner.style.display = 'flex';
+        
+        // Show the button even if it fails, so they can try again
+        document.getElementById('scanNextBtn').style.display = 'block';
+      });
+    }
 
-window.addEventListener('load', () => {
-    const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 }, false);
-    scanner.render(onScanSuccess);
-});
-</script>
+    // 5. This function runs when the user clicks the "Scan Next Ticket" button
+    function resumeScanning() {
+      // Hide the banner and the button
+      document.getElementById('resultBanner').style.display = 'none';
+      document.getElementById('scanNextBtn').style.display = 'none';
+      document.getElementById('scannerHint').textContent = "Scanning is active.";
+      
+      // Unlock the scanner so it can read codes again
+      isProcessing = false; 
+    }
+
+    window.addEventListener('load', () => {
+      // qrbox reduces the scanning area so it doesn't accidentally scan codes in the background
+      const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 }, false);
+      scanner.render(onScanSuccess);
+    });
+  </script>
 </body>
 </html>
