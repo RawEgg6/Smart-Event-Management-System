@@ -1,65 +1,197 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Check-in | Smart Event</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check-in | SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--nav-bg:#0f0f13;--nav-border:rgba(255,255,255,0.07);--nav-text:#c9c9d0;--nav-accent:#7c6af7;
+      --nav-accent-hover:#9d8fff;--nav-pill:rgba(124,106,247,0.12);--nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12);--nav-logout-hover:rgba(239,68,68,0.22);--nav-logout-text:#f87171;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#f4f5f8;min-height:100vh;}
+
+    .navbar{position:sticky;top:0;z-index:100;background:var(--nav-bg);border-bottom:1px solid var(--nav-border);
+      display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;gap:24px;}
+    .navbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
+      text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .brand-dot{width:8px;height:8px;background:var(--nav-accent);border-radius:50%;}
+    .navbar-links{display:flex;align-items:center;gap:4px;flex:1;}
+    .navbar-links a{color:var(--nav-text);text-decoration:none;font-size:13.5px;font-weight:500;
+      padding:6px 13px;border-radius:8px;transition:background .15s,color .15s;}
+    .navbar-links a:hover{background:var(--nav-pill-hover);color:#fff;}
+    .navbar-links a.active{background:var(--nav-pill);color:var(--nav-accent-hover);}
+    .navbar-right{display:flex;align-items:center;gap:10px;}
+    .navbar-user{font-size:13px;color:var(--nav-text);padding:5px 12px;background:rgba(255,255,255,0.05);border-radius:20px;}
+    .navbar-user strong{color:#fff;}
+    .role-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:99px;}
+    .role-badge.organizer{background:rgba(52,211,153,0.15);color:#34d399;}
+    .role-badge.admin{background:rgba(251,191,36,0.15);color:#fbbf24;}
+    .navbar-logout{color:var(--nav-logout-text)!important;background:var(--nav-logout)!important;
+      font-size:13px!important;font-weight:600!important;padding:6px 14px!important;
+      border-radius:8px!important;text-decoration:none;}
+    .navbar-logout:hover{background:var(--nav-logout-hover)!important;}
+
+    .page-wrap{padding:32px;max-width:800px;margin:0 auto;}
+    .page-header{margin-bottom:28px;}
+    .page-header h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-.5px;}
+    .page-header p{color:#888;font-size:14px;margin-top:4px;}
+    .page-header p a{color:#7c6af7;text-decoration:none;}
+
+    .card{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);padding:24px;margin-bottom:20px;}
+    .card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:18px;
+      display:flex;align-items:center;gap:8px;}
+
+    .field{margin-bottom:16px;}
+    .field label{display:block;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#999;margin-bottom:6px;}
+    .field input{width:100%;padding:10px 14px;border:1.5px solid #e5e5e5;border-radius:9px;
+      font-size:14px;font-family:'DM Sans',sans-serif;color:#1a1a2e;outline:none;transition:border-color .15s;}
+    .field input:focus{border-color:#7c6af7;box-shadow:0 0 0 3px rgba(124,106,247,.1);}
+
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:9px;
+      font-size:13.5px;font-weight:600;font-family:'DM Sans',sans-serif;border:none;cursor:pointer;transition:opacity .15s;}
+    .btn:hover{opacity:.85;}
+    .btn-primary{background:#7c6af7;color:#fff;}
+    .btn-ghost{background:#f0f0f0;color:#555;}
+
+    .result-banner{padding:14px 18px;border-radius:10px;font-size:14px;font-weight:500;
+      margin-top:14px;display:none;}
+    .result-banner.success{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;}
+    .result-banner.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
+
+    .count-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .count-box{background:#f4f5f8;border-radius:10px;padding:12px 20px;text-align:center;}
+    .count-box .val{font-size:28px;font-weight:700;color:#1a1a2e;font-family:'Syne',sans-serif;}
+    .count-box .lbl{font-size:11.5px;color:#888;margin-top:2px;}
+
+    .scanner-link{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;
+      background:#0f0f13;color:#fff;border-radius:10px;text-decoration:none;
+      font-size:14px;font-weight:600;transition:opacity .15s;}
+    .scanner-link:hover{opacity:.85;}
+  </style>
 </head>
 <body>
-<h2>Organizer Check-in</h2>
 
-<p><a th:href="@{/scanner}">Open Camera Scanner</a></p>
+  <nav class="navbar">
+    <a class="navbar-brand" href="#"><span class="brand-dot"></span>SmartEvent</a>
+    
+    <div class="navbar-links">
+      <th:block sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/dashboard}">Dashboard</a>
+        <a th:href="@{/admin/reports}">Reports</a>
+        <a th:href="@{/events}">Events</a>
+      </th:block>
 
-<form id="manualCheckinForm">
-    <label>Paste QR Data:</label>
-    <input type="text" id="qrData" required>
-    <button type="submit">Validate & Check-in</button>
-</form>
+      <th:block sec:authorize="hasRole('ORGANIZER')">
+        <a th:href="@{/organizer/dashboard}">Dashboard</a>
+        <a th:href="@{/events}">Events</a>
+        <a th:href="@{/checkin}" class="active">Check-in</a>
+        <a th:href="@{/scanner}">Scanner</a>
+      </th:block>
 
-<div id="result" style="margin-top: 16px;"></div>
+      <th:block sec:authorize="hasRole('STUDENT')">
+        <a th:href="@{/events}">Browse Events</a>
+        <a th:href="@{/student/home}">My Tickets</a>
+      </th:block>
+    </div>
 
-<div style="margin-top: 20px;">
-    <label>Event ID for Live Count:</label>
-    <input type="number" id="eventId" min="1">
-    <button type="button" onclick="refreshCount()">Get Count</button>
-    <p>Checked-in count: <span id="count">-</span></p>
-</div>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">User</strong>&nbsp;
+        <span class="role-badge admin"     sec:authorize="hasRole('ADMIN')">Admin</span>
+        <span class="role-badge organizer" sec:authorize="hasRole('ORGANIZER')">Organizer</span>
+        <span class="role-badge student"   sec:authorize="hasRole('STUDENT')">Student</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
 
-<script>
-const form = document.getElementById('manualCheckinForm');
-const resultDiv = document.getElementById('result');
+  <div class="page-wrap">
+    <div class="page-header">
+      <h1>QR Check-in</h1>
+      <p>Validate tickets manually or use the <a th:href="@{/scanner}">camera scanner</a></p>
+    </div>
 
-form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const qrData = document.getElementById('qrData').value;
+    <div class="card">
+      <h3>📷 Camera Scanner</h3>
+      <p style="color:#888;font-size:14px;margin-bottom:16px;">
+        Open the live camera QR scanner on this device.
+      </p>
+      <a class="scanner-link" th:href="@{/scanner}">Open Camera Scanner →</a>
+    </div>
 
-    const response = await fetch('/checkin/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrData })
+    <div class="card">
+      <h3>✍️ Manual Entry</h3>
+      <div class="field">
+        <label>Paste or type QR Data</label>
+        <input type="text" id="qrData" placeholder="e.g. QR-TEST-001"/>
+      </div>
+      <button class="btn btn-primary" onclick="doCheckin()">Validate &amp; Check-in</button>
+      <div class="result-banner" id="resultBanner"></div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Live Check-in Count</h3>
+      <div class="count-row">
+        <div class="field" style="margin-bottom:0;flex:1;">
+          <label>Event ID</label>
+          <input type="number" id="eventId" placeholder="Enter event ID" min="1"/>
+        </div>
+        <button class="btn btn-ghost" onclick="refreshCount()" style="margin-top:20px;">Refresh</button>
+        <div class="count-box">
+          <div class="val" id="count">–</div>
+          <div class="lbl">Checked In</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function doCheckin() {
+      const qrData = document.getElementById('qrData').value.trim();
+      if (!qrData) return;
+      const banner = document.getElementById('resultBanner');
+      try {
+        const res = await fetch('/checkin/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrData })
+        });
+        const data = await res.json();
+        banner.textContent = data.message;
+        banner.className = 'result-banner ' + (data.success ? 'success' : 'error');
+        banner.style.display = 'block';
+        if (data.success) {
+          document.getElementById('eventId').value = data.eventId;
+          document.getElementById('count').textContent = data.checkedInCount;
+          document.getElementById('qrData').value = '';
+        }
+      } catch(e) {
+        banner.textContent = 'Network error — could not reach server.';
+        banner.className = 'result-banner error';
+        banner.style.display = 'block';
+      }
+    }
+
+    async function refreshCount() {
+      const eventId = document.getElementById('eventId').value;
+      if (!eventId) return;
+      const res = await fetch('/checkin/event/' + eventId + '/count');
+      const data = await res.json();
+      document.getElementById('count').textContent = data.checkedInCount;
+    }
+
+    // also allow Enter key in input
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('qrData').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doCheckin();
+      });
     });
-
-    const data = await response.json();
-    resultDiv.textContent = data.message;
-    resultDiv.style.color = data.success ? 'green' : 'red';
-
-    if (data.success) {
-        document.getElementById('eventId').value = data.eventId;
-        document.getElementById('count').textContent = data.checkedInCount;
-        form.reset();
-    }
-});
-
-async function refreshCount() {
-    const eventId = document.getElementById('eventId').value;
-    if (!eventId) {
-        return;
-    }
-
-    const response = await fetch('/checkin/event/' + eventId + '/count');
-    const data = await response.json();
-    document.getElementById('count').textContent = data.checkedInCount;
-}
-</script>
+  </script>
 </body>
 </html>

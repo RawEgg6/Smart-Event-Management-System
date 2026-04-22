@@ -1,12 +1,125 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Home</title>
+  <meta charset="UTF-8"/>
+  <title>Home — SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --nav-bg:#0f0f13; --nav-border:rgba(255,255,255,0.07);
+      --nav-text:#c9c9d0; --nav-text-hover:#ffffff;
+      --nav-accent:#7c6af7; --nav-accent-hover:#9d8fff;
+      --nav-pill:rgba(124,106,247,0.12); --nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12); --nav-logout-hover:rgba(239,68,68,0.22);
+      --nav-logout-text:#f87171;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:#f4f5f8; min-height:100vh; }
+    .navbar { position:sticky; top:0; z-index:100; background:var(--nav-bg);
+      border-bottom:1px solid var(--nav-border); display:flex; align-items:center;
+      justify-content:space-between; padding:0 32px; height:58px; gap:24px; }
+    .navbar-brand { font-family:'Syne',sans-serif; font-weight:800; font-size:17px;
+      color:#fff; text-decoration:none; display:flex; align-items:center; gap:8px; }
+    .brand-dot { width:8px; height:8px; background:var(--nav-accent); border-radius:50%; display:inline-block; }
+    .navbar-links { display:flex; align-items:center; gap:4px; flex:1; }
+    .navbar-links a { color:var(--nav-text); text-decoration:none; font-size:13.5px; font-weight:500;
+      padding:6px 13px; border-radius:8px; transition:background 0.15s,color 0.15s; }
+    .navbar-links a:hover { background:var(--nav-pill-hover); color:var(--nav-text-hover); }
+    .navbar-links a.active { background:var(--nav-pill); color:var(--nav-accent-hover); }
+    .navbar-right { display:flex; align-items:center; gap:10px; }
+    .navbar-user { font-size:13px; color:var(--nav-text); padding:5px 12px;
+      background:rgba(255,255,255,0.05); border-radius:20px; }
+    .navbar-user strong { color:#fff; }
+    .role-badge { font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase;
+      padding:2px 8px; border-radius:99px; }
+    .role-badge.student { background:rgba(96,165,250,0.15); color:#60a5fa; }
+    .navbar-logout { color:var(--nav-logout-text) !important; background:var(--nav-logout) !important;
+      font-size:13px !important; font-weight:600 !important; padding:6px 14px !important;
+      border-radius:8px !important; text-decoration:none; }
+    .navbar-logout:hover { background:var(--nav-logout-hover) !important; }
+
+    .hero { padding:40px 32px; text-align:center; }
+    .hero h1 { font-family:'Syne',sans-serif; font-size:32px; font-weight:800;
+      color:#1a1a2e; letter-spacing:-1px; margin-bottom:8px; }
+    .hero p { color:#888; font-size:15px; }
+    
+    .content-wrap { max-width:1000px; margin:0 auto; padding:0 32px 64px; }
+    
+    .tickets-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px; }
+    .ticket-card { background:#fff; border-radius:14px; border:1px solid #ebebeb; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
+    .ticket-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .ticket-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:#1a1a2e; }
+    .status-badge { font-size:11px; font-weight:700; padding:4px 10px; border-radius:12px; letter-spacing:0.5px; }
+    .status-badge.UNUSED { background:#dcfce7; color:#15803d; }
+    .status-badge.USED { background:#fee2e2; color:#b91c1c; }
+    
+    .ticket-meta { font-size:13.5px; color:#666; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+    
+    .qr-box { margin-top:20px; background:#f4f5f8; border:2px dashed #d1d5db; border-radius:10px; padding:20px; text-align:center; }
+    .qr-box p { font-size:11px; color:#888; text-transform:uppercase; font-weight:700; margin-bottom:8px; letter-spacing:1px; }
+    .qr-box code { font-size:18px; font-weight:700; color:#1a1a2e; font-family:monospace; word-break:break-all; }
+    
+    .empty-state { text-align:center; padding:40px; background:#fff; border-radius:14px; border:1px solid #ebebeb; }
+    .empty-state p { color:#888; margin-bottom:20px; }
+    .btn-primary { display:inline-block; background:#7c6af7; color:#fff; padding:10px 24px; border-radius:8px; text-decoration:none; font-weight:600; font-size:14px; transition:opacity 0.15s; }
+    .btn-primary:hover { opacity:0.85; }
+  </style>
 </head>
 <body>
-<h2>Student Home</h2>
-<p><a th:href="@{/events}">Browse Events</a></p>
+  <nav class="navbar">
+    <a class="navbar-brand" href="/student/home"><span class="brand-dot"></span>SmartEvent</a>
+    <div class="navbar-links">
+      <th:block sec:authorize="hasRole('STUDENT')">
+        <a th:href="@{/events}">Browse Events</a>
+        <a th:href="@{/student/home}" class="active">My Tickets</a>
+      </th:block>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">Student</strong>
+        &nbsp;<span class="role-badge student" sec:authorize="hasRole('STUDENT')">Student</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <h1>My Tickets</h1>
+    <p>Present these QR codes at the door for check-in.</p>
+  </div>
+
+  <div class="content-wrap">
+    
+    <div th:if="${#lists.isEmpty(tickets)}" class="empty-state">
+      <p>You haven't registered for any events yet.</p>
+      <a class="btn-primary" th:href="@{/events}">Browse Events</a>
+    </div>
+
+    <div th:if="${!#lists.isEmpty(tickets)}" class="tickets-grid">
+      <div th:each="ticket : ${tickets}" class="ticket-card">
+        
+        <div class="ticket-header">
+          <div class="ticket-title" th:text="${ticket.event.title}">Event Title</div>
+          <span class="status-badge" 
+                th:classappend="${ticket.status.name() == 'USED' ? 'USED' : 'UNUSED'}" 
+                th:text="${ticket.status}">UNUSED</span>
+        </div>
+        
+        <div class="ticket-meta"><span>📍</span><span th:text="${ticket.event.location}">Location</span></div>
+        <div class="ticket-meta"><span>🕐</span><span th:text="${ticket.event.startTime}">Time</span></div>
+        
+        <div class="qr-box">
+          <p>Scan for Entry</p>
+          <code th:text="${ticket.qrData}">QR-DATA-HERE</code>
+        </div>
+        
+      </div>
+    </div>
+    
+  </div>
 </body>
 </html>

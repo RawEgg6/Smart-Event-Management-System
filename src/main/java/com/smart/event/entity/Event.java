@@ -8,6 +8,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "events")
@@ -86,4 +89,22 @@ public class Event {
     public void setOrganizer(User organizer) {
         this.organizer = organizer;
     }
+
+    @Column(nullable = false)
+    private int capacity;
+
+    // getter & setter
+    public int getCapacity() { return capacity; }
+    public void setCapacity(int capacity) { this.capacity = capacity; }
+
+
+    public enum EventStatus { DRAFT, PUBLISHED, ONGOING, COMPLETED, CANCELLED }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventStatus status = EventStatus.DRAFT;
+
+    // getter & setter
+    public EventStatus getStatus() { return status; }
+    public void setStatus(EventStatus status) { this.status = status; }
 }

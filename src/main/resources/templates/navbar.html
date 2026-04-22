@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style th:fragment="navstyles">
+    :root {
+      --nav-bg: #0f0f13;
+      --nav-border: rgba(255,255,255,0.07);
+      --nav-text: #c9c9d0;
+      --nav-text-hover: #ffffff;
+      --nav-accent: #7c6af7;
+      --nav-accent-hover: #9d8fff;
+      --nav-pill: rgba(124,106,247,0.12);
+      --nav-pill-hover: rgba(124,106,247,0.22);
+      --nav-logout: rgba(239,68,68,0.12);
+      --nav-logout-hover: rgba(239,68,68,0.22);
+      --nav-logout-text: #f87171;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f4f5f8;
+      min-height: 100vh;
+    }
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--nav-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 58px;
+      gap: 24px;
+    }
+    .navbar-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 17px;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .navbar-brand .brand-dot {
+      width: 8px; height: 8px;
+      background: var(--nav-accent);
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .navbar-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+    .navbar-links a {
+      color: var(--nav-text);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 6px 13px;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .navbar-links a:hover {
+      background: var(--nav-pill-hover);
+      color: var(--nav-text-hover);
+    }
+    .navbar-links a.active {
+      background: var(--nav-pill);
+      color: var(--nav-accent-hover);
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .navbar-user {
+      font-size: 13px;
+      color: var(--nav-text);
+      padding: 5px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .navbar-user strong {
+      color: #fff;
+    }
+    .role-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .role-badge.admin    { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .role-badge.organizer{ background: rgba(52,211,153,0.15); color: #34d399; }
+    .role-badge.student  { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .navbar-logout {
+      color: var(--nav-logout-text) !important;
+      background: var(--nav-logout) !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      padding: 6px 14px !important;
+      border-radius: 8px !important;
+      text-decoration: none;
+      transition: background 0.15s !important;
+    }
+    .navbar-logout:hover {
+      background: var(--nav-logout-hover) !important;
+    }
+    .page-content {
+      padding: 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
+    }
+    .page-header p {
+      color: #888;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    .page-header p a {
+      color: var(--nav-accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <nav th:fragment="navbar" class="navbar">
+    <a class="navbar-brand" href="#">
+      <span class="brand-dot"></span>
+      SmartEvent
+    </a>
+
+    <div class="navbar-links">
+      <!-- ADMIN links -->
+      <th:block sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/dashboard}"
+           th:classappend="${#httpServletRequest.requestURI == '/admin/dashboard'} ? 'active' : ''">
+          Dashboard
+        </a>
+        <a th:href="@{/admin/reports}"
+           th:classappend="${#httpServletRequest.requestURI.startsWith('/admin/reports')} ? 'active' : ''">
+          Reports
+        </a>
+        <a th:href="@{/events}">Events</a>
+      </th:block>
+
+      <!-- ORGANIZER links -->
+      <th:block sec:authorize="hasRole('ORGANIZER')">
+        <a th:href="@{/organizer/dashboard}"
+           th:classappend="${#httpServletRequest.requestURI == '/organizer/dashboard'} ? 'active' : ''">
+          Dashboard
+        </a>
+        <a th:href="@{/events}">Events</a>
+        <a th:href="@{/checkin}">Check-in</a>
+        <a th:href="@{/scanner}">Scanner</a>
+      </th:block>
+
+      <!-- STUDENT links -->
+      <th:block sec:authorize="hasRole('STUDENT')">
+        <a th:href="@{/events}"
+           th:classappend="${#httpServletRequest.requestURI == '/events'} ? 'active' : ''">
+          Browse Events
+        </a>
+        <a th:href="@{/student/home}"
+           th:classappend="${#httpServletRequest.requestURI == '/student/home'} ? 'active' : ''">
+          My Tickets
+        </a>
+      </th:block>
+    </div>
+
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">User</strong>
+        &nbsp;
+        <span class="role-badge admin"    sec:authorize="hasRole('ADMIN')">Admin</span>
+        <span class="role-badge organizer" sec:authorize="hasRole('ORGANIZER')">Organizer</span>
+        <span class="role-badge student"  sec:authorize="hasRole('STUDENT')">Student</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+</body>
+</html>

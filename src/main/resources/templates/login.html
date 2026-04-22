@@ -1,28 +1,312 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Smart Event</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #0f0f13;
+    }
+
+    /* LEFT PANEL */
+    .panel-left {
+      background: #0f0f13;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(124,106,247,0.18) 0%, transparent 70%);
+      top: -80px; left: -80px;
+      pointer-events: none;
+    }
+    .panel-left::after {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(124,106,247,0.10) 0%, transparent 70%);
+      bottom: 40px; right: -60px;
+      pointer-events: none;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .brand-dot {
+      width: 10px; height: 10px;
+      background: #7c6af7;
+      border-radius: 50%;
+      box-shadow: 0 0 12px rgba(124,106,247,0.6);
+    }
+    .brand-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+    .panel-hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 0;
+    }
+    .panel-hero .tagline {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #7c6af7;
+      margin-bottom: 20px;
+    }
+    .panel-hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+    .panel-hero h1 span {
+      color: #7c6af7;
+    }
+    .panel-hero p {
+      color: rgba(255,255,255,0.45);
+      font-size: 15px;
+      line-height: 1.65;
+      max-width: 360px;
+    }
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 36px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .feature-icon {
+      width: 36px; height: 36px;
+      background: rgba(124,106,247,0.12);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .feature-text {
+      font-size: 13.5px;
+      color: rgba(255,255,255,0.5);
+    }
+    .feature-text strong {
+      color: rgba(255,255,255,0.85);
+      display: block;
+      font-weight: 500;
+      margin-bottom: 1px;
+    }
+    .panel-footer {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    /* RIGHT PANEL */
+    .panel-right {
+      background: #f4f5f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 56px;
+    }
+    .form-box {
+      width: 100%;
+      max-width: 400px;
+    }
+    .form-box h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .form-box .form-sub {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 32px;
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .alert-error   { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .alert-info    { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+    /* Form fields */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #999;
+      margin-bottom: 7px;
+    }
+    .field input {
+      width: 100%;
+      padding: 11px 15px;
+      border: 1.5px solid #e5e5e5;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-family: 'DM Sans', sans-serif;
+      color: #1a1a2e;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field input:focus {
+      border-color: #7c6af7;
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.12);
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: #7c6af7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 6px;
+    }
+    .btn-submit:hover { opacity: 0.88; }
+    .btn-submit:active { transform: scale(0.99); }
+    .form-footer {
+      text-align: center;
+      font-size: 13.5px;
+      color: #888;
+      margin-top: 22px;
+    }
+    .form-footer a {
+      color: #7c6af7;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .form-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .panel-left { display: none; }
+      .panel-right { padding: 40px 28px; }
+    }
+  </style>
 </head>
 <body>
-<h2>Login</h2>
-<p th:if="${param.registered}">Registration successful. Please login.</p>
-<p th:if="${param.error}">Invalid username or password.</p>
-<p th:if="${param.logout}">You have been logged out.</p>
 
-<form th:action="@{/login}" method="post">
-    <label>Username:</label>
-    <input type="text" name="username" required>
-    <br><br>
+  <!-- LEFT: Brand panel -->
+  <div class="panel-left">
+    <a class="brand" href="#">
+      <span class="brand-dot"></span>
+      <span class="brand-name">SmartEvent</span>
+    </a>
 
-    <label>Password:</label>
-    <input type="password" name="password" required>
-    <br><br>
+    <div class="panel-hero">
+      <div class="tagline">College Event Platform</div>
+      <h1>Manage events<br>with <span>precision</span></h1>
+      <p>QR ticketing, live crowd monitoring, and real-time attendance tracking — all in one place.</p>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🎟️</div>
+          <div class="feature-text">
+            <strong>QR Ticketing</strong>
+            Instant ticket generation and scanning
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">
+            <strong>Live Crowd Monitoring</strong>
+            Real-time capacity tracking with alerts
+          </div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-text">
+            <strong>Role-Based Access</strong>
+            Separate views for students, organizers, admins
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <button type="submit">Login</button>
-</form>
+    <div class="panel-footer">© 2026 SmartEvent · College Event Management</div>
+  </div>
 
-<p>New user? <a th:href="@{/register}">Register here</a></p>
+  <!-- RIGHT: Login form -->
+  <div class="panel-right">
+    <div class="form-box">
+      <h2>Sign in</h2>
+      <p class="form-sub">Welcome back — enter your credentials to continue</p>
+
+      <div class="alert alert-success" th:if="${param.registered}">
+        ✅ Account created! Please sign in.
+      </div>
+      <div class="alert alert-error" th:if="${param.error}">
+        ⚠️ Invalid username or password. Please try again.
+      </div>
+      <div class="alert alert-info" th:if="${param.logout}">
+        👋 You've been signed out successfully.
+      </div>
+
+      <form th:action="@{/login}" method="post">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="Enter your username" required autocomplete="username"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Enter your password" required autocomplete="current-password"/>
+        </div>
+        <button class="btn-submit" type="submit">Sign in →</button>
+      </form>
+
+      <div class="form-footer">
+        Don't have an account? <a th:href="@{/register}">Create one</a>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Reports — SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --nav-bg:#0f0f13; --nav-border:rgba(255,255,255,0.07);
+      --nav-text:#c9c9d0; --nav-text-hover:#ffffff;
+      --nav-accent:#7c6af7; --nav-accent-hover:#9d8fff;
+      --nav-pill:rgba(124,106,247,0.12); --nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12); --nav-logout-hover:rgba(239,68,68,0.22);
+      --nav-logout-text:#f87171;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:#f4f5f8; min-height:100vh; }
+
+    .navbar { position:sticky; top:0; z-index:100; background:var(--nav-bg);
+      border-bottom:1px solid var(--nav-border); display:flex; align-items:center;
+      justify-content:space-between; padding:0 32px; height:58px; gap:24px; }
+    .navbar-brand { font-family:'Syne',sans-serif; font-weight:800; font-size:17px;
+      color:#fff; text-decoration:none; letter-spacing:-0.3px; display:flex; align-items:center; gap:8px; }
+    .brand-dot { width:8px; height:8px; background:var(--nav-accent); border-radius:50%; display:inline-block; }
+    .navbar-links { display:flex; align-items:center; gap:4px; flex:1; }
+    .navbar-links a { color:var(--nav-text); text-decoration:none; font-size:13.5px; font-weight:500;
+      padding:6px 13px; border-radius:8px; transition:background 0.15s,color 0.15s; white-space:nowrap; }
+    .navbar-links a:hover { background:var(--nav-pill-hover); color:var(--nav-text-hover); }
+    .navbar-links a.active { background:var(--nav-pill); color:var(--nav-accent-hover); }
+    .navbar-right { display:flex; align-items:center; gap:10px; }
+    .navbar-user { font-size:13px; color:var(--nav-text); padding:5px 12px;
+      background:rgba(255,255,255,0.05); border-radius:20px; white-space:nowrap; }
+    .navbar-user strong { color:#fff; }
+    .role-badge { font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase;
+      padding:2px 8px; border-radius:99px; }
+    .role-badge.admin { background:rgba(251,191,36,0.15); color:#fbbf24; }
+    .navbar-logout { color:var(--nav-logout-text) !important; background:var(--nav-logout) !important;
+      font-size:13px !important; font-weight:600 !important; padding:6px 14px !important;
+      border-radius:8px !important; text-decoration:none; transition:background 0.15s !important; }
+    .navbar-logout:hover { background:var(--nav-logout-hover) !important; }
+
+    .page-content { padding:32px; max-width:1200px; margin:0 auto; }
+    .page-header { margin-bottom:24px; }
+    .page-header h1 { font-family:'Syne',sans-serif; font-size:26px; font-weight:800;
+      color:#1a1a2e; letter-spacing:-0.5px; }
+    .page-header p { color:#888; font-size:14px; margin-top:4px; }
+    .page-header p a { color:var(--nav-accent); text-decoration:none; }
+
+    .section { background:#fff; border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.06);
+      border:1px solid #eee; overflow:hidden; margin-bottom:24px; }
+    .section-header { padding:18px 22px; border-bottom:1px solid #f0f0f0; }
+    .section-header h3 { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:#1a1a2e; }
+
+    /* Filter form */
+    .filter-row { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; padding:20px 22px; }
+    .field label { display:block; font-size:11.5px; font-weight:600; color:#999;
+      text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; }
+    .field select, .field input { padding:8px 12px; border:1.5px solid #e5e5e5;
+      border-radius:8px; font-size:13.5px; font-family:'DM Sans',sans-serif;
+      color:#333; min-width:180px; outline:none; transition:border-color 0.15s; }
+    .field select:focus, .field input:focus { border-color:var(--nav-accent); }
+    .btn { display:inline-block; padding:8px 18px; border-radius:8px; text-decoration:none;
+      font-size:13.5px; font-weight:600; cursor:pointer; border:none;
+      font-family:'DM Sans',sans-serif; transition:opacity 0.15s; }
+    .btn:hover { opacity:0.85; }
+    .btn-primary { background:#7c6af7; color:#fff; }
+    .btn-ghost   { background:#f0f0f0; color:#555; }
+    .btn-green   { background:#16a34a; color:#fff; }
+    .btn-teal    { background:#0891b2; color:#fff; }
+
+    table { width:100%; border-collapse:collapse; }
+    th { background:#fafafa; color:#888; padding:11px 18px; text-align:left;
+      font-size:11.5px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;
+      border-bottom:1px solid #f0f0f0; }
+    td { padding:13px 18px; border-bottom:1px solid #f7f7f7; font-size:13.5px; color:#333; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafbff; }
+    .empty { padding:40px; text-align:center; color:#bbb; font-size:14px; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:99px; font-size:11.5px; font-weight:700; }
+    .badge-DRAFT      { background:#f0f0f0; color:#666; }
+    .badge-PUBLISHED  { background:#dbeafe; color:#1d4ed8; }
+    .badge-ONGOING    { background:#dcfce7; color:#15803d; }
+    .badge-COMPLETED  { background:#e0f2fe; color:#0369a1; }
+    .badge-CANCELLED  { background:#fee2e2; color:#b91c1c; }
+
+    .downloads { display:flex; gap:10px; flex-wrap:wrap; padding:20px 22px; border-top:1px solid #f0f0f0; align-items:center; }
+    .downloads label { font-size:13px; color:#666; font-weight:500; }
+    .downloads select { padding:7px 12px; border:1.5px solid #e5e5e5; border-radius:8px;
+      font-size:13.5px; font-family:'DM Sans',sans-serif; color:#333; outline:none; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a class="navbar-brand" href="/admin/dashboard">
+      <span class="brand-dot"></span>SmartEvent
+    </a>
+    <div class="navbar-links">
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/reports" class="active">Reports</a>
+      <a href="/events">Events</a>
+    </div>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">Admin</strong>
+        &nbsp;<span class="role-badge admin">Admin</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <div class="page-header">
+      <h1>Reports</h1>
+      <p><a href="/admin/dashboard">← Back to Dashboard</a></p>
+    </div>
+
+    <!-- Filters -->
+    <div class="section">
+      <div class="section-header"><h3>Filter Events</h3></div>
+      <form method="get" action="/admin/reports">
+        <div class="filter-row">
+          <div class="field">
+            <label>Organizer</label>
+            <select name="organizerId">
+              <option value="">All Organizers</option>
+              <option th:each="org : ${organizers}"
+                      th:value="${org.id}"
+                      th:text="${org.username}"
+                      th:selected="${organizerId != null and organizerId == org.id}">
+              </option>
+            </select>
+          </div>
+          <div class="field">
+            <label>From Date</label>
+            <input type="datetime-local" name="from"
+                   th:value="${from != null ? #temporals.format(from, 'yyyy-MM-dd''T''HH:mm') : ''}"/>
+          </div>
+          <div class="field">
+            <label>To Date</label>
+            <input type="datetime-local" name="to"
+                   th:value="${to != null ? #temporals.format(to, 'yyyy-MM-dd''T''HH:mm') : ''}"/>
+          </div>
+          <div class="field" style="display:flex;gap:8px;">
+            <button class="btn btn-primary" type="submit">Apply</button>
+            <a class="btn btn-ghost" href="/admin/reports">Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results -->
+    <div class="section">
+      <div class="section-header">
+        <h3>Results
+          <span th:text="'(' + ${snapshots.size()} + ' events)'"
+                style="color:#aaa;font-family:'DM Sans',sans-serif;font-weight:400;font-size:13px;margin-left:6px;"></span>
+        </h3>
+      </div>
+      <div th:if="${snapshots.isEmpty()}" class="empty">No events match the selected filters.</div>
+      <table th:if="${!snapshots.isEmpty()}">
+        <thead>
+          <tr>
+            <th>Event</th><th>Organizer</th><th>Start Time</th><th>Status</th>
+            <th>Capacity</th><th>Registered</th><th>Checked In</th><th>No Shows</th><th>% Full</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="s : ${snapshots}">
+            <td th:text="${s['eventName']}">–</td>
+            <td th:text="${s['organizerName']}">–</td>
+            <td th:text="${s['startTime']}">–</td>
+            <td><span class="badge" th:classappend="'badge-' + ${s['status']}" th:text="${s['status']}">–</span></td>
+            <td th:text="${s['capacity']}">0</td>
+            <td th:text="${s['registered']}">0</td>
+            <td th:text="${s['checkedIn']}">0</td>
+            <td th:text="${s['registered'] > s['checkedIn'] ? s['registered'] - s['checkedIn'] : 0}">0</td>
+            <td th:text="${s['percent']} + '%'">0%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Download actions -->
+      <div class="downloads">
+        <a class="btn btn-green"
+           th:href="@{/admin/reports/csv(organizerId=${organizerId},from=${from},to=${to})}">
+          ⬇ Download Filtered CSV
+        </a>
+        <a class="btn btn-teal" href="/admin/reports/audit-csv">
+          ⬇ Full Audit Log
+        </a>
+        <form method="get" action="/admin/reports/audit-csv" style="display:flex;align-items:center;gap:8px;">
+          <select name="eventId">
+            <option value="">All Events (Audit)</option>
+            <option th:each="e : ${allEvents}" th:value="${e.id}" th:text="${e.title}"></option>
+          </select>
+          <button class="btn btn-teal" type="submit">⬇ Audit by Event</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

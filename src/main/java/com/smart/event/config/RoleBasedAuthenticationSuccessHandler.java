@@ -19,11 +19,11 @@ public class RoleBasedAuthenticationSuccessHandler implements AuthenticationSucc
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             String role = authority.getAuthority();
             if ("ROLE_ADMIN".equals(role)) {
-                response.sendRedirect("/admin/home");
+                response.sendRedirect("/admin/dashboard");
                 return;
             }
             if ("ROLE_ORGANIZER".equals(role)) {
-                response.sendRedirect("/organizer/home");
+                response.sendRedirect("/organizer/dashboard");
                 return;
             }
             if ("ROLE_STUDENT".equals(role)) {

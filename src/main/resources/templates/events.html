@@ -1,39 +1,222 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Events | Smart Event</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events | SmartEvent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --nav-bg:#0f0f13; --nav-border:rgba(255,255,255,0.07);
+      --nav-text:#c9c9d0; --nav-accent:#7c6af7; --nav-accent-hover:#9d8fff;
+      --nav-pill:rgba(124,106,247,0.12); --nav-pill-hover:rgba(124,106,247,0.22);
+      --nav-logout:rgba(239,68,68,0.12); --nav-logout-hover:rgba(239,68,68,0.22);
+      --nav-logout-text:#f87171;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#f4f5f8;min-height:100vh;}
+
+    /* NAV */
+    .navbar{position:sticky;top:0;z-index:100;background:var(--nav-bg);border-bottom:1px solid var(--nav-border);
+      display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:58px;gap:24px;}
+    .navbar-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
+      text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .brand-dot{width:8px;height:8px;background:var(--nav-accent);border-radius:50%;}
+    .navbar-links{display:flex;align-items:center;gap:4px;flex:1;}
+    .navbar-links a{color:var(--nav-text);text-decoration:none;font-size:13.5px;font-weight:500;
+      padding:6px 13px;border-radius:8px;transition:background .15s,color .15s;white-space:nowrap;}
+    .navbar-links a:hover{background:var(--nav-pill-hover);color:#fff;}
+    .navbar-links a.active{background:var(--nav-pill);color:var(--nav-accent-hover);}
+    .navbar-right{display:flex;align-items:center;gap:10px;}
+    .navbar-user{font-size:13px;color:var(--nav-text);padding:5px 12px;
+      background:rgba(255,255,255,0.05);border-radius:20px;white-space:nowrap;}
+    .navbar-user strong{color:#fff;}
+    .role-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 8px;border-radius:99px;}
+    .role-badge.admin{background:rgba(251,191,36,0.15);color:#fbbf24;}
+    .role-badge.organizer{background:rgba(52,211,153,0.15);color:#34d399;}
+    .role-badge.student{background:rgba(96,165,250,0.15);color:#60a5fa;}
+    .navbar-logout{color:var(--nav-logout-text)!important;background:var(--nav-logout)!important;
+      font-size:13px!important;font-weight:600!important;padding:6px 14px!important;
+      border-radius:8px!important;text-decoration:none;transition:background .15s!important;}
+    .navbar-logout:hover{background:var(--nav-logout-hover)!important;}
+
+    /* PAGE */
+    .page-wrap{padding:32px;max-width:1280px;margin:0 auto;}
+    .page-header{margin-bottom:28px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+    .page-header h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#1a1a2e;letter-spacing:-.5px;}
+    .page-header p{color:#888;font-size:14px;margin-top:4px;}
+
+    /* Create form */
+    .create-section{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);padding:24px;margin-bottom:28px;}
+    .create-section h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;margin-bottom:18px;}
+    .create-form{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+    .cf-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px;}
+    .cf-field label{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#999;}
+    .cf-field input{padding:9px 13px;border:1.5px solid #e5e5e5;border-radius:9px;font-size:14px;
+      font-family:'DM Sans',sans-serif;color:#1a1a2e;outline:none;transition:border-color .15s;}
+    .cf-field input:focus{border-color:#7c6af7;box-shadow:0 0 0 3px rgba(124,106,247,.1);}
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:9px;
+      font-size:13.5px;font-weight:600;font-family:'DM Sans',sans-serif;
+      text-decoration:none;border:none;cursor:pointer;transition:opacity .15s;}
+    .btn:hover{opacity:.85;}
+    .btn-primary{background:#7c6af7;color:#fff;}
+    .btn-teal{background:#0891b2;color:#fff;}
+    .btn-sm{padding:6px 14px;font-size:12.5px;}
+
+    /* Event cards */
+    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+    .event-card{background:#fff;border-radius:14px;border:1px solid #ebebeb;
+      box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;
+      display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s;}
+    .event-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.1);transform:translateY(-2px);}
+    .card-accent{height:4px;background:linear-gradient(90deg,#7c6af7,#60a5fa);}
+    .card-body{padding:20px;flex:1;}
+    .card-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:6px; display:flex; justify-content:space-between;}
+    .card-desc{font-size:13.5px;color:#888;line-height:1.55;margin-bottom:14px;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .card-meta{display:flex;flex-direction:column;gap:5px;}
+    .meta-item{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#777;}
+    .meta-item span:first-child{width:16px;text-align:center;flex-shrink:0;}
+    .card-footer{padding:14px 20px;border-top:1px solid #f4f4f4;display:flex;justify-content:flex-end; align-items:center;}
+
+    .empty-state{text-align:center;padding:64px 32px;color:#bbb;}
+    .empty-state .icon{font-size:40px;margin-bottom:12px;}
+    .empty-state p{font-size:15px;}
+    
+    .result-banner{padding:14px 18px;border-radius:10px;font-size:14px;font-weight:500;}
+    .result-banner.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;}
+    .status-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:12px; letter-spacing:0.5px; background:#f0f0f0; color:#555;}
+    .status-badge.ONGOING { background:#dcfce7; color:#15803d; }
+  </style>
 </head>
 <body>
-<h2>Events</h2>
 
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Logout</button>
-</form>
+  <nav class="navbar">
+    <a class="navbar-brand" href="#"><span class="brand-dot"></span>SmartEvent</a>
+    
+    <div class="navbar-links">
+      <th:block sec:authorize="hasRole('ADMIN')">
+        <a th:href="@{/admin/dashboard}">Dashboard</a>
+        <a th:href="@{/admin/reports}">Reports</a>
+        <a th:href="@{/events}" class="active">Events</a>
+      </th:block>
 
-<h3>Create Event (Organizer/Admin)</h3>
-<form th:action="@{/events}" method="post">
-    <label>Title:</label>
-    <input type="text" name="title" required>
-    <label>Description:</label>
-    <input type="text" name="description">
-    <label>Location:</label>
-    <input type="text" name="location">
-    <button type="submit">Create</button>
-</form>
+      <th:block sec:authorize="hasRole('ORGANIZER')">
+        <a th:href="@{/organizer/dashboard}">Dashboard</a>
+        <a th:href="@{/events}" class="active">Events</a>
+        <a th:href="@{/checkin}">Check-in</a>
+        <a th:href="@{/scanner}">Scanner</a>
+      </th:block>
 
-<h3>Available Events</h3>
-<div th:if="${#lists.isEmpty(events)}">No events yet.</div>
-<div th:each="event : ${events}" style="margin-bottom: 12px; border: 1px solid #ddd; padding: 10px;">
-    <strong th:text="${event.title}"></strong>
-    <p th:text="${event.description}"></p>
-    <p>Location: <span th:text="${event.location}"></span></p>
-    <form th:action="@{'/events/' + ${event.id} + '/register'}" method="post">
-        <button type="submit">Register (Student)</button>
-    </form>
-</div>
+      <th:block sec:authorize="hasRole('STUDENT')">
+        <a th:href="@{/events}" class="active">Browse Events</a>
+        <a th:href="@{/student/home}">My Tickets</a>
+      </th:block>
+    </div>
 
-<p><a th:href="@{/checkin}">Go to Organizer Check-in</a></p>
+    <div class="navbar-right">
+      <div class="navbar-user">
+        Hello, <strong sec:authentication="name">User</strong>&nbsp;
+        <span class="role-badge admin"     sec:authorize="hasRole('ADMIN')">Admin</span>
+        <span class="role-badge organizer" sec:authorize="hasRole('ORGANIZER')">Organizer</span>
+        <span class="role-badge student"   sec:authorize="hasRole('STUDENT')">Student</span>
+      </div>
+      <a class="navbar-logout" th:href="@{/logout}">Sign out</a>
+    </div>
+  </nav>
+
+  <div class="page-wrap">
+
+    <div class="page-header">
+      <div>
+        <h1>Events</h1>
+        <p>Browse and register for upcoming campus events</p>
+      </div>
+      <a class="btn btn-teal" th:href="@{/checkin}" sec:authorize="hasRole('ORGANIZER')">
+        📷 Go to Check-in
+      </a>
+    </div>
+
+    <div class="create-section" sec:authorize="hasRole('ORGANIZER')">
+      <h3>Create New Event</h3>
+      <form th:action="@{/events}" method="post" class="create-form">
+        <div class="cf-field" style="flex:2; min-width: 180px;">
+          <label>Title</label>
+          <input type="text" name="title" placeholder="Event title" required/>
+        </div>
+        <div class="cf-field" style="flex:3; min-width: 200px;">
+          <label>Description</label>
+          <input type="text" name="description" placeholder="Short description"/>
+        </div>
+        <div class="cf-field" style="min-width: 140px;">
+          <label>Location</label>
+          <input type="text" name="location" placeholder="Venue"/>
+        </div>
+        
+        <div class="cf-field" style="width: 100px; flex:none;">
+          <label>Capacity</label>
+          <input type="number" name="capacity" min="1" placeholder="e.g. 50" required/>
+        </div>
+        <div class="cf-field" style="flex:1; min-width: 170px;">
+          <label>Start Time</label>
+          <input type="datetime-local" name="startTime" required/>
+        </div>
+        <div class="cf-field" style="flex:1; min-width: 170px;">
+          <label>End Time</label>
+          <input type="datetime-local" name="endTime"/>
+        </div>
+
+        <button class="btn btn-primary" type="submit" style="margin-bottom: 2px;">+ Create</button>
+      </form>
+    </div>
+
+    <div th:if="${param.error}" class="result-banner error" style="display:flex; margin-bottom: 24px; gap:8px;">
+      <span class="result-icon">⚠️</span>
+      <span th:if="${param.error[0] == 'NotPublished'}">Registration is currently closed for this event.</span>
+      <span th:if="${param.error[0] == 'AlreadyRegistered'}">You already have a ticket for this event! Check your dashboard.</span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(events)}" class="empty-state">
+      <div class="icon">🗓️</div>
+      <p>No active events right now. Check back soon!</p>
+    </div>
+
+    <div class="events-grid" th:if="${!#lists.isEmpty(events)}">
+      <div class="event-card" th:each="event : ${events}">
+        <div class="card-accent"></div>
+        <div class="card-body">
+          <div class="card-title">
+            <span th:text="${event.title}">Event Title</span>
+            <span class="status-badge" th:classappend="${event.status.name()}" th:text="${event.status}">PUBLISHED</span>
+          </div>
+          <div class="card-desc" th:text="${event.description}">Description</div>
+          <div class="card-meta">
+            <div class="meta-item"><span>📍</span><span th:text="${event.location}">Location</span></div>
+            <div class="meta-item"><span>🕐</span><span th:text="${event.startTime}">Start Time</span></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          
+          <form th:action="@{'/events/' + ${event.id} + '/register'}" method="post"
+                sec:authorize="hasRole('STUDENT')" th:if="${event.status.name() == 'PUBLISHED'}">
+            <button class="btn btn-primary btn-sm" type="submit">Register →</button>
+          </form>
+          
+          <span sec:authorize="hasRole('STUDENT')" th:if="${event.status.name() != 'PUBLISHED'}" style="font-size:13px; color:#999; font-weight:600; margin-right:8px;">
+            Registration Closed
+          </span>
+
+          <a class="btn btn-primary btn-sm"
+             th:href="@{/organizer/events/{id}(id=${event.id})}"
+             sec:authorize="hasAnyRole('ORGANIZER','ADMIN')">View Details</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </body>
 </html>
