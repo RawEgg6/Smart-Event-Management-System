@@ -253,7 +253,7 @@ Uses `ticket.user.username` and `ticket.generatedAt` (not `name` or `createdAt`)
 
 ---
 
-## Phase 5 — Admin Monitoring & Reports 🔜
+## Phase 5 — Admin Monitoring & Reports (✅completed)
 
 **Files to create:**
 - `AdminController.java` — Admin-only endpoints (`/admin/`)
